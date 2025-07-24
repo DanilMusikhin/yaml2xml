@@ -1,0 +1,222 @@
+---
+wildfly_jvm_options: "-Djboss.protocol.handler.modules=ru.lanit.wildfly -Dconsul.kv.prefix=/v1/kv/ -Dquery.duration.threshold=5000 -DejbCacheHazelcastAddress=hazelcast-priv-ppa-service.$STAND-infra:5701 -DejbCacheBlockSecs=0"
+wildfly_postgresqlro: true
+
+wildfly_datasources:
+  - jndi: "java:/jdbc/ppaDSrwPostgres"
+    pool: { name: "ppaDSrwPostgres", min: 10, max: 350 }
+    url: "${env.SECRET_POSTGRES_JNDI_URL_EIS_DB_PPA_PPA_DB}?application_name=priv-ppa-rw"
+    user: ppa_z_rw
+    password: "${env.SECRET_POSTGRES_PASS_EIS_DB_PPA_PPA_DB_PPA_Z_RW}"
+    driver: postgresql
+    xa: false
+    no_recovery: true
+    background_validation_time: 10000
+    idle_timeout_minutes: 1
+    validate_on_match: true
+  - jndi: "java:/jdbc/ppaDSroPostgres"
+    pool: { name: "ppaDSroPostgres", min: 10, max: 350 }
+    url: "${env.SECRET_POSTGRES_JNDI_URL_EIS_DB_PPA_PPA_DB_RO}?application_name=priv-ppa-ro&amp;targetServerType=preferSecondary"
+    user: ppa_z_ro
+    password: "${env.SECRET_POSTGRES_PASS_EIS_DB_PPA_PPA_DB_PPA_Z_RO}"
+    driver: postgresqlro
+    xa: false
+    no_recovery: true
+    background_validation_time: 10000
+    idle_timeout_minutes: 1
+    validate_on_match: true
+  - jndi: "java:/jdbc/Schedule_ex"
+    pool: { name: "44FZSchedule_ex", min: 10, max: 100 }
+    url: "${env.SECRET_POSTGRES_JNDI_URL_EIS_DB_PPA_PPA_DB}?application_name=priv-ppa-sched"
+    user: fks_scheduler
+    password: "${env.SECRET_POSTGRES_PASS_EIS_DB_PPA_PPA_DB_FKS_SCHEDULER}"
+    driver: postgresql
+    xa: false
+    no_recovery: true
+    background_validation_time: 10000
+
+wildfly_concurrency_executor:
+  - { name: "wm", jndi: "java:/wm/default" }
+  - { name: "wm-user-control", jndi: "java:/wm/user-control" }
+  - { name: "wm-ppa-tp", jndi: "java:/wm/ppa-tp", max_threads: "50", core_threads: "50", hung_task_treshhold: "60000" }
+  - { name: "wm-ppa", jndi: "java:/wm/ppa", max_threads: "50", core_threads: "50", hung_task_treshhold: "60000" }
+  - { name: "esiaFacadeExecutor", jndi: "java:/wm/esiaFacadeExecutor", max_threads: "50", core_threads: "50", hung_task_treshhold: "60000" }
+  - { name: "quartz-async-tp", jndi: "java:/wm/quartz-async-tp", max_threads: "50", core_threads: "50", queue_length: "60000" }
+
+wildfly_scheduled_executor_services:
+  - { name: "ejbCallCacheBeanScheduledExecutor", jndi: "java:jboss/ee/scheduler/ppa/ejbCallCacheBeanScheduledExecutor" }
+
+wildfly_lookup_naming:
+  - { name: "java:global/jdbc/pgzDB", lookup: "java:/44fz/Pgz" }
+  - { name: "java:global/jdbc/Schedule_ex", lookup: "java:/jdbc/Schedule_ex" }
+  - { name: "java:global/jdbc/ppaDSrwPostgres", lookup: "java:/jdbc/ppaDSrwPostgres" }
+  - { name: "java:global/jdbc/ppaDSroPostgres", lookup: "java:/jdbc/ppaDSroPostgres" }
+  - { name: "java:global/ejb/MenuFacade", lookup: "ejb:fz44-ppa-ear/fz44-ppa-facade-ejb/MenuFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.MenuFacade"}
+  - { name: "java:global/ejb/PpaEjbConfiguration", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-service-ejb/PpaEjbConfigurationBean!ru.lanit.fz44.ejb.service.ppa.api.PpaEjbConfiguration"}
+  - { name: "java:global/ejb/UserServiceRemote", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-service-ejb/UserServiceRemoteBean!ru.lanit.fz44.ejb.service.ppa.api.UserServiceRemote" }
+  - { name: "java:global/ejb/UserFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/UserRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.UserRwFacade" }
+  - { name: "java:global/ejb/SystemConfigFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/SystemConfigRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.SystemConfigRwFacade" }
+  - { name: "java:global/ejb/PrivilegeFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/PrivilegeRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.PrivilegeFacade" }
+  - { name: "java:global/ejb/AgreementRequirementsFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/AgreementRequirementsRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.AgreementRequirementsFacade" }
+  - { name: "java:global/ejb/BudgetFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/BudgetRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.BudgetFacade" }
+  - { name: "java:global/ejb/ApproveCycleAccessFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/ApproveCycleAccessRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.ApproveCycleAccessFacade" }
+  - { name: "java:global/ejb/MailMessageFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/MailMessageRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.MailMessageRwFacade" }
+  - { name: "java:global/ejb/CryptoPluginStatisticsFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/CryptoPluginStatisticsRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.CryptoPluginStatisticsRwFacade" }
+  - { name: "java:global/ejb/RegistrationRequestFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/RegistrationRequestRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.RegistrationRequestFacade" }
+  - { name: "java:global/ejb/EtpFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/EtpRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.EtpFacade" }
+  - { name: "java:global/ejb/VsrzFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/VsrzRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.VsrzFacade" }
+  - { name: "java:global/ejb/AccountFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/AccountRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.AccountFacade" }
+  - { name: "java:global/ejb/WorkDaysFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/WorkDaysRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.WorkDaysFacade" }
+  - { name: "java:global/ejb/SiteAlertFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/SiteAlertRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.SiteAlertRwFacade" }
+  - { name: "java:global/ejb/OrganizationFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/OrganizationRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.OrganizationRwFacade" }
+  - { name: "java:global/ejb/OrganizationLinkFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/OrganizationLinkRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.OrganizationLinkFacade" }
+  - { name: "java:global/ejb/EgrulRemote", lookup: "ejb:egrul/ejbEgrul/EgrulBean!ru.lanit.egrul.api.EgrulRemote" }
+  - { name: "java:global/ejb/EgripRemote", lookup: "ejb:egrip/ejbEgrip/EgripBean!ru.lanit.egrip.api.EgripRemote" }
+  - { name: "java:global/ejb/InfoSystemFacade", lookup: "ejb:fz44-ris-facade-ear/fz44-ris-facade-ejb/InfoSystemFacadeBean!ru.lanit.fz44.ejb.facade.ris.api.InfoSystemFacade" }
+  - { name: "java:global/ejb/ReportRegistryFacade", lookup: "ejb:fz44-rep-facade-ear/fz44-rep-facade-ejb/ReportRegistryFacadeBean!ru.lanit.fz44.ejb.facade.rep.api.ReportRegistryFacade" }
+  - { name: "java:global/ejb/AgencyClause223Service", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/AgencyClause223ServiceBean!ru.lanit.fz44.ejb.service.nsi.api.AgencyClause223Service" }
+  - { name: "java:global/ejb/OperatorEisService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OperatorEisServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OperatorEisService" }
+  - { name: "java:global/ejb/OperatorKtruService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OperatorKtruServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OperatorKtruService" }
+  - { name: "java:global/ejb/RegionalOperatorService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionalOperatorServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionalOperatorService" }
+  - { name: "java:global/ejb/RegionalOperatorTkoService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionalOperatorTkoServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionalOperatorTkoService" }
+  - { name: "java:global/ejb/JuristicKindServiceBean", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/JuristicKindServiceBean!ru.lanit.fz44.ejb.service.nsi.api.JuristicKindService" }
+  - { name: "java:global/ejb/PpoService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/PpoServiceBean!ru.lanit.fz44.ejb.service.nsi.api.PpoService" }
+  - { name: "java:global/ejb/OkatoService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkatoService!ru.lanit.fz44.ejb.service.nsi.api.OkatoService" }
+  - { name: "java:global/ejb/OkopfService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkopfServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkopfService" }
+  - { name: "java:global/ejb/OkfsService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkfsService!ru.lanit.fz44.ejb.service.nsi.api.OkfsService" }
+  - { name: "java:global/ejb/OkopfOldService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkopfOldServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkopfOldService" }
+  - { name: "java:global/ejb/OkatoOktmoLinkService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkatoOktmoLinkServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkatoOktmoLinkService" }
+  - { name: "java:global/ejb/NsiReceiptCodesFacade", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/NsiReceiptCodesFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.NsiReceiptCodesFacade" }
+  - { name: "java:global/ejb/KladrService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/KladrServiceBean!ru.lanit.fz44.ejb.service.nsi.api.KladrService" }
+  - { name: "java:global/ejb/RegionService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionService" }
+  - { name: "java:global/ejb/RegionFacade", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.RegionFacade" }
+  - { name: "java:global/ejb/BudgetService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/BudgetServiceBean!ru.lanit.fz44.ejb.service.nsi.api.BudgetService" }
+  - { name: "java:global/ejb/TofkService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/TofkServiceBean!ru.lanit.fz44.ejb.service.nsi.api.TofkService" }
+  - { name: "java:global/ejb/RemoteFileUpdater", lookup: "ejb:eis-filestore-ear/eis-filestore-ejb/FileUpdaterBean!ru.lanit.fz44.filestore.ejb.api.FileUpdater" }
+  - { name: "java:global/ejb/ControlSubjectsFacade", lookup: "ejb:fz44-psk-facade-ear/fz44-psk-facade-ejb/ControlSubjectsFacadeBean!ru.lanit.fz44.ejb.facade.psk.api.ControlSubjectsFacade" }
+  - { name: "java:global/ejb/CalendarEventTypeFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarEventTypeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarEventTypeFacade" }
+  - { name: "java:global/ejb/CalendarNotifyTypeFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotifyTypeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotifyTypeFacade" }
+  - { name: "java:global/ejb/CalendarEventPrivilegeFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarEventPrivilegeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarEventPrivilegeFacade" }
+  - { name: "java:global/ejb/CalendarNotifyPrivilegeFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotifyPrivilegeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotifyPrivilegeFacade" }
+  - { name: "java:global/ejb/AgreementFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/AgreementFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.AgreementFacade" }
+  - { name: "java:global/ejb/DocumentFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/DocumentFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.DocumentFacade" }
+  - { name: "java:global/ejb/MembersFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/MembersFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.MembersFacade" }
+  - { name: "java:global/ejb/ResultLogFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/ResultLogFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.ResultLogFacade" }
+  - { name: "java:global/ejb/RouteFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/RouteFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.RouteFacade" }
+  - { name: "java:global/ejb/RouteStageFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/RouteStageFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.RouteStageFacade" }
+  - { name: "java:global/ejb/BankGuaranteeFacade", lookup: "ejb:fz44-bank-guarantee-facade-ear/fz44-bank-guarantee-facade-ejb/BankGuaranteeFacadeBean!ru.lanit.fz44.ejb.facade.bankguarantee.api.BankGuaranteeFacade" }
+  - { name: "java:global/ejb/PropertyServiceBean", lookup: "ejb:user-control-config-ejb-ear/user-control-config-ejb/PropertyServiceBean!ru.lanit.auth.user.control.config.api.PropertyService" }
+  - { name: "java:global/ejb/UserControlServiceBean", lookup: "ejb:user-control-service-ejb-ear/user-control-service-ejb/UserControlServiceBean!ru.lanit.auth.user.control.service.UserControlService" }
+  - { name: "java:global/ejb/BiklessBankFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/BiklessBankRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.BiklessBankFacade" }
+  - { name: "java:global/ejb/InfoProvider", lookup: "ejb:eis-filestore-ear/eis-filestore-ejb/FileStoreManager!ru.lanit.fz44.filestore.ejb.api.InfoProvider" }
+  - { name: "java:global/ejb/EjbCallCacheInvalidator", lookup: "ejb:fz44-ppa-rw-ear/fz44-ejb-cache-ejb/EjbCallCacheBean!ru.lanit.fz44.cache.ejb.api.EjbCallCacheInvalidator"}
+  - { name: "java:global/ejb/CalendarNotificationFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotificationFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotificationFacade" }
+  - { name: "java:global/ejb/DocStoreOKFacadeBean", lookup: "ejb:docstore-ear/docstore-facade-ws/DocStoreFacadeBean!ru.lanit.docstore.facade.ejb.api.DocStoreFacade" }
+  - { name: "java:global/ejb/NsiPurchaseTypeForPpaFacade", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/NsiPurchaseTypeForPpaFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.NsiPurchaseTypeForPpaFacade" }
+  - { name: "java:global/ejb/DocStoreFCSFacadeBean", lookup: "ejb:docstore-ear/docstore-facade-ws/DocStoreFacadeBean!ru.lanit.docstore.facade.ejb.api.DocStoreFacade" }
+  - { name: "java:global/ejb/NsiOkpd2Service", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/NsiOkpd2ServiceBean!ru.lanit.fz44.ejb.service.nsi.api.NsiOkpd2Service" }
+
+wildfly_sharedlibs:
+  - { dir: "shared-lib", "path": "ru/lanit/sharedlib/ppa/main", "name": "ru.lanit.sharedlib.ppa" }
+
+wildfly_logging:
+  - { class: "ru.lanit.fz44.dao.common.hibernate.spring.strategy.AbstractStrategyHibernateDao", level: "DEBUG" }
+  - { class: "org.apache.tiles.template", level: "DEBUG" }
+  - { class: "org.hibernate.engine.internal.StatisticalLoggingSessionEventListener", level: "WARN" }
+  - { class: "ru.lanit.fz44.ejb.common.interceptors.SpringContextInterceptor", level: "WARN" }
+
+wildfly_security_realms:
+  - { name: "ejb-security-realm", password: "ejb" }
+
+wildfly_simple_naming:
+  - { name: "java:global/cryptoClientConsulPath", value: "fz44/crypto/eis/Client" }
+  - { name: "java:global/cryptoHashClientConsulPath", value: "fz44/crypto/eis/HashClient" }
+  - { name: "java:global/eventOutboxKafkaUrl", value: "${env.EVENT_OUTBOX_KAFKA_BOOTSTRAP_SERVERS}" }
+
+wildfly_applications:
+  - { file: "fz44-ppa-ear.ear", name: "fz44-ppa-ear.ear" }
+  - { file: "fz44-ppa-rw-ear.ear", name: "fz44-ppa-rw-ear.ear" }
+  - { file: "fz44-ppa-jobs-ear.ear", name: "fz44-ppa-jobs-ear.ear" }
+  - { file: "fz44-ppa-web-ear.ear", name: "fz44-ppa-web-ear.ear" }
+  - { file: "fz44-ppa-validation-ear.ear", name: "fz44-ppa-validation-ear.ear" }
+  - { file: "fz44-ppa-ws-ear.ear", name: "fz44-ppa-ws-ear.ear" }
+  - { file: "fz44-ppa-chat-auth-facade-ear.ear", name: "fz44-ppa-chat-auth-facade-ear.ear" }
+
+wildfly_amq_url: "${env.SECRET_WILDFLY_AMQ_EIS_INT_URL_ADDRESS}?initialReconnectDelay=300000"
+
+wildfly_amq_connection_factories:
+  - { jndi: "java:jboss/eisQueueConnectionFactory", pool: { max: 10}, name: "java:jboss/eisQueueConnectionFactory" }
+  - { jndi: "java:jboss/kafkaExportConnectionFactory", pool: { max: 10 }, name: "java:jboss/kafkaExportConnectionFactory" }
+
+wildfly_amq_queues:
+  - jndi: "java:jboss/jms/queue/internalNrgQueue"
+    physical_name: "internalNrgQueue"
+  - jndi: "java:jboss/jms/queue/kafkaExportQueue"
+    physical_name: "kafkaExportQueue"
+
+wildfly_socket_bindings:
+  - { name: "remote-ejb-egrul", destinations: [{ host: "127.0.0.1", port: "8080" }] }
+  - { name: "remote-ejb-egrip", destinations: [{ host: "127.0.0.1", port: "8080" }] }
+  - { name: "remote-ejb-ris", destinations: [{ host: "priv-ris-service", port: "8080" }] }
+  - { name: "remote-ejb-rep", destinations: [{ host: "priv-rep-service", port: "8080" }] }
+  - { name: "remote-ejb-nsi", destinations: [{ host: "priv-nsi-facade-service", port: "8080" }] }
+  - { name: "remote-ejb-psk", destinations: [{ host: "priv-psk-service", port: "8080" }] }
+  - { name: "remote-ejb-calendar", destinations: [{ host: "priv-calendar-service", port: "8080" }] }
+  - { name: "remote-ejb-routes", destinations: [{ host: "priv-routes-service", port: "8080" }] }
+  - { name: "remote-ejb-rbg", destinations: [{ host: "priv-rbg-service", port: "8080" }] }
+  - { name: "remote-ejb-uc", destinations: [{ host: "common-user-control-service", port: "8080" }] }
+  - { name: "remote-ejb-fstore", destinations: [{ host: "priv-filestore-eis-service", port: "8080" }] }
+  - { name: "remote-ejb-dstore-ok", destinations: [{ host: "common-dstore-ok-service", port: "8080" }] }
+  - { name: "remote-ejb-dstore-fcs", destinations: [ { host: "priv-dstore-fcs-service", port: "8080" } ] }
+
+wildfly_outbound_connections:
+  - { name: "remote-ejb-connection-egrul", socket_binding: "remote-ejb-egrul", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-egrip", socket_binding: "remote-ejb-egrip", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-ris", socket_binding: "remote-ejb-ris", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-rep", socket_binding: "remote-ejb-rep", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-nsi", socket_binding: "remote-ejb-nsi", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-psk", socket_binding: "remote-ejb-psk", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-calendar", socket_binding: "remote-ejb-calendar", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-routes", socket_binding: "remote-ejb-routes", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-rbg", socket_binding: "remote-ejb-rbg", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-uc", socket_binding: "remote-ejb-uc", security_realm: "ejb-security-realm", user: "ejb" }
+  - { name: "remote-ejb-connection-fstore", socket_binding: "remote-ejb-fstore", user: "ejb", security_realm: "ejb-security-realm" }
+  - { name: "remote-ejb-connection-dstore-ok", socket_binding: "remote-ejb-dstore-ok", user: "ejb", security_realm: "ejb-security-realm" }
+  - { name: "remote-ejb-connection-dstore-fcs", socket_binding: "remote-ejb-dstore-fcs", user: "ejb", security_realm: "ejb-security-realm" }
+
+wildfly_mail_sessions:
+  - name: "ppa"
+    jndi: "java:jboss/mail/Ppa"
+    from: "${env.SECRET_WILDFLY_MAIL_FROM}"
+    server: "${env.SECRET_WILDFLY_MAIL_SERVER}"
+    port: 25
+    username: ""
+    password: ""
+
+wildfly_set_encoding: UTF-8
+
+wildfly_system_properties:
+   - { name: "JAEGER_SERVICE_NAME", value: "${env.STAND}-priv-ppa"}
+   - { name: "JAEGER_REPORTER_LOG_SPANS", value: "true" }
+   - { name: "JAEGER_SAMPLER_TYPE", value: "const" }
+   - { name: "JAEGER_SAMPLER_PARAM", value: "0.0" }
+   - { name: "JAEGER_AGENT_PORT", value: "6831"}
+   - { name: "JAEGER_AGENT_HOST", value: "${env.SECRET_WILDFLY_EIS_JAEGER_ADDRESS}" } 
+
+wildfly_microprofile_opentracing_smallrye: true
+wildfly_microprofile_opentracing_jaeger:
+   type: "const"
+   param: "0.0"
+
+wildfly_strict_max_pools:
+  - { name: "login-to-user-cache-bean-pool", size: 60, timeout_seconds: 5 }
+  - { name: "ejb-call-cache-bean-pool", size: 600, timeout_seconds: 5 }
+
+wildfly_users:
+  - { login: "ejb", passwordhash: "50bc63e5dca78d8711596bacb2adfcfe", roles: "" }
+
+user_access_refusal_enabled: "true"
+slsb_strict_max_pool: 600
+
+wildfly_microprofile_health_smallrye: true
+

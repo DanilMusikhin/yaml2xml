@@ -1,0 +1,968 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<server xmlns="urn:jboss:domain:15.0">
+    <extensions>
+        <extension module="org.jboss.as.clustering.infinispan"/>
+        <extension module="org.jboss.as.connector"/>
+        <extension module="org.jboss.as.deployment-scanner"/>
+        <extension module="org.jboss.as.ee"/>
+        <extension module="org.jboss.as.ejb3"/>
+        <extension module="org.jboss.as.jaxrs"/>
+        <extension module="org.jboss.as.jdr"/>
+        <extension module="org.jboss.as.jmx"/>
+        <extension module="org.jboss.as.jpa"/>
+        <extension module="org.jboss.as.jsf"/>
+        <extension module="org.jboss.as.jsr77"/>
+        <extension module="org.jboss.as.logging"/>
+        <extension module="org.jboss.as.mail"/>
+        <extension module="org.jboss.as.naming"/>
+        <extension module="org.jboss.as.pojo"/>
+        <extension module="org.jboss.as.remoting"/>
+        <extension module="org.jboss.as.sar"/>
+        <extension module="org.jboss.as.security"/>
+        <extension module="org.jboss.as.transactions"/>
+        <extension module="org.jboss.as.webservices"/>
+        <extension module="org.jboss.as.weld"/>
+        <extension module="org.wildfly.extension.batch.jberet"/>
+        <extension module="org.wildfly.extension.bean-validation"/>
+        <extension module="org.wildfly.extension.clustering.web"/>
+        <extension module="org.wildfly.extension.core-management"/>
+        <extension module="org.wildfly.extension.discovery"/>
+        <extension module="org.wildfly.extension.ee-security"/>
+        <extension module="org.wildfly.extension.elytron"/>
+        <extension module="org.wildfly.extension.health"/>
+        <extension module="org.wildfly.extension.io"/>
+        <extension module="org.wildfly.extension.messaging-activemq"/>
+        <extension module="org.wildfly.extension.metrics"/>
+        <extension module="org.wildfly.extension.microprofile.config-smallrye"/>
+        <extension module="org.wildfly.extension.microprofile.jwt-smallrye"/>
+        <extension module="org.wildfly.extension.microprofile.health-smallrye"/>
+        <extension module="org.wildfly.extension.microprofile.metrics-smallrye"/>
+        <extension module="org.wildfly.extension.microprofile.opentracing-smallrye"/>
+        <extension module="org.wildfly.extension.request-controller"/>
+        <extension module="org.wildfly.extension.security.manager"/>
+        <extension module="org.wildfly.extension.undertow"/>
+
+<!--        <extension module="org.wildfly.iiop-openjdk"/> -->
+    </extensions>        
+    <system-properties>
+            <property name="org.wildfly.sigterm.suspend.timeout" value="60"/>
+            <property name="org.jboss.ejb.client.discovery.additional-node-timeout" value="0"/>
+            <property name="jboss.as.management.blocking.timeout" value="1800"/>
+            <property name="JAEGER_SERVICE_NAME" value="${env.STAND}-priv-ppa"/>
+            <property name="JAEGER_REPORTER_LOG_SPANS" value="true"/>
+            <property name="JAEGER_SAMPLER_TYPE" value="const"/>
+            <property name="JAEGER_SAMPLER_PARAM" value="0.0"/>
+            <property name="JAEGER_AGENT_PORT" value="6831"/>
+            <property name="JAEGER_AGENT_HOST" value="${env.SECRET_WILDFLY_EIS_JAEGER_ADDRESS}"/>
+    </system-properties>
+    <management>
+        <security-realms>
+            <security-realm name="ManagementRealm">
+                <authentication>
+                    <local default-user="$local" skip-group-loading="true"/>
+                    <properties path="mgmt-users.properties" relative-to="jboss.server.config.dir"/>
+                </authentication>
+                <authorization map-groups-to-roles="false">
+                    <properties path="mgmt-groups.properties" relative-to="jboss.server.config.dir"/>
+                </authorization>
+            </security-realm>
+            <security-realm name="ApplicationRealm">
+                <server-identities>
+                    <ssl>
+                        <keystore path="application.keystore" relative-to="jboss.server.config.dir" keystore-password="password" alias="server" key-password="password" generate-self-signed-certificate-host="localhost"/>
+                    </ssl>
+                </server-identities>
+                <authentication>
+                    <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
+                    <properties path="/etc/wildfly/application-users.properties"/>
+                </authentication>
+                <authorization>
+                    <properties path="/etc/wildfly/application-roles.properties"/>
+                </authorization>
+            </security-realm>                
+            <security-realm name="ejb-security-realm">
+               <server-identities>
+                   <secret value="ZWpi"/>
+               </server-identities>
+            </security-realm>
+        </security-realms>
+        <audit-log>
+            <formatters>
+                <json-formatter name="json-formatter"/>
+            </formatters>
+            <handlers>
+                <size-rotating-file-handler name="file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
+            </handlers>
+            <logger log-boot="false" log-read-only="false" enabled="false">
+                <handlers>
+                    <handler name="file"/>
+                </handlers>
+            </logger>
+        </audit-log>
+        <management-interfaces>
+            <http-interface security-realm="ManagementRealm">
+                <http-upgrade enabled="true"/>
+                <socket-binding http="management-http"/>
+            </http-interface>
+        </management-interfaces>
+        <access-control provider="simple">
+            <role-mapping>
+                <role name="SuperUser">
+                    <include>
+                        <user name="$local"/>
+                    </include>
+                </role>
+            </role-mapping>
+        </access-control>
+    </management>
+    <profile>
+        <subsystem xmlns="urn:jboss:domain:logging:8.0">
+            <console-handler name="CONSOLE" >
+                <formatter>
+<!--                 <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/> -->
+                     <named-formatter name="EIS-FORMATTER" />
+                </formatter>
+            </console-handler>                
+            <logger category="org.jboss.as">
+                   <level name="INFO" />
+            </logger>
+            <logger category="ru.lanit.fz44.dao.common.hibernate.spring.strategy.AbstractStrategyHibernateDao">
+                   <level name="DEBUG" />
+            </logger>
+            <logger category="ru.lanit.fz44.web.ppa">
+                   <level name="DEBUG" />
+            </logger>
+            <logger category="org.apache.tiles.template">
+                   <level name="DEBUG" />
+            </logger>
+            <logger category="org.hibernate.engine.internal.StatisticalLoggingSessionEventListener">
+                   <level name="WARN" />
+            </logger>
+            <logger category="ru.lanit.fz44.ejb.common.interceptors.SpringContextInterceptor">
+                   <level name="WARN" />
+            </logger>
+            <logger category="ru.lanit.fz44.ppa.hibernate.UserChangeInterceptor">
+                   <level name="DEBUG" />
+            </logger>
+            <logger category="com.arjuna">
+                <level name="WARN"/>
+            </logger>
+            <logger category="org.jboss.as.config">
+                <level name="DEBUG"/>
+            </logger>
+            <logger category="sun.rmi">
+                <level name="WARN"/>
+            </logger>
+            <logger category="ru.lanit">
+                <level name="INFO"/>
+            </logger>
+            <logger category="ru.lanit.monitoring.util.config">
+                <level name="ERROR"/>
+            </logger>
+            <logger category="ru.lanit.monitoring.config">
+                <level name="ERROR"/>
+            </logger>
+            <root-logger>
+                <level name="ERROR"/>
+                <handlers>
+                    <handler name="CONSOLE"/>
+                </handlers>
+            </root-logger>
+            <formatter name="PATTERN">
+                <pattern-formatter pattern="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
+            </formatter>
+            <formatter name="COLOR-PATTERN">
+                <pattern-formatter pattern="%K{level}%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n"/>
+            </formatter>
+            <formatter name="EIS-FORMATTER">
+                <custom-formatter module="ru.lanit.eis.logging" class="ru.lanit.eis.logging.CustomPatternFormatter">
+                    <properties>
+                        <property name="pattern" value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p (%t) [%c{1}] [#m] #r#d %s%e%n"/>
+                    </properties>
+                </custom-formatter>
+            </formatter>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:batch-jberet:2.0">
+            <default-job-repository name="in-memory"/>
+            <default-thread-pool name="batch"/>
+            <job-repository name="in-memory">
+                <in-memory/>
+            </job-repository>
+            <thread-pool name="batch">
+                <max-threads count="10"/>
+                <keepalive-time time="30" unit="seconds"/>
+            </thread-pool>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:bean-validation:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:datasources:6.0">            
+        <datasources>
+            <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true">
+                <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>
+                <driver>h2</driver>
+                <security>
+                    <user-name>sa</user-name>
+                    <password>sa</password>
+                </security>
+            </datasource>
+            <datasource jta="true" jndi-name="java:/jdbc/ppaDSrwPostgres" pool-name="ppaDSrwPostgres" enabled="true" use-java-context="true" statistics-enabled="true">
+                <connection-url>${env.SECRET_POSTGRES_JNDI_URL_EIS_DB_PPA_PPA_DB}?application_name=priv-ppa-rw</connection-url>
+                <driver>postgresql</driver>
+                <pool>
+                    <max-pool-size>350</max-pool-size>
+                    <prefill>true</prefill>
+                </pool>
+                <security>
+                    <user-name>ppa_z_rw</user-name>
+                    <password>${env.SECRET_POSTGRES_PASS_EIS_DB_PPA_PPA_DB_PPA_Z_RW}</password>
+                </security> 
+                <validation>
+                    <validate-on-match>false</validate-on-match>
+                    <background-validation>true</background-validation>
+                    <background-validation-millis>10000</background-validation-millis>
+                    <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
+                </validation>
+                <timeout>
+                    <idle-timeout-minutes>1</idle-timeout-minutes>
+                </timeout>
+            </datasource>
+            <datasource jta="true" jndi-name="java:/jdbc/ppaDSroPostgres" pool-name="ppaDSroPostgres" enabled="true" use-java-context="true" statistics-enabled="true">
+                <connection-url>${env.SECRET_POSTGRES_JNDI_URL_EIS_DB_PPA_PPA_DB_RO}?application_name=priv-ppa-ro&amp;targetServerType=preferSecondary</connection-url>
+                <driver>postgresqlro</driver>
+                <pool>
+                    <max-pool-size>350</max-pool-size>
+                    <prefill>true</prefill>
+                </pool>
+                <security>
+                    <user-name>ppa_z_ro</user-name>
+                    <password>${env.SECRET_POSTGRES_PASS_EIS_DB_PPA_PPA_DB_PPA_Z_RO}</password>
+                </security> 
+                <validation>
+                    <validate-on-match>false</validate-on-match>
+                    <background-validation>true</background-validation>
+                    <background-validation-millis>10000</background-validation-millis>
+                    <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
+                </validation>
+                <timeout>
+                    <idle-timeout-minutes>1</idle-timeout-minutes>
+                </timeout>
+            </datasource>
+            <datasource jta="true" jndi-name="java:/jdbc/Schedule_ex" pool-name="44FZSchedule_ex" enabled="true" use-java-context="true" statistics-enabled="true">
+                <connection-url>${env.SECRET_POSTGRES_JNDI_URL_EIS_DB_PPA_PPA_DB}?application_name=priv-ppa-sched</connection-url>
+                <driver>postgresql</driver>
+                <pool>
+                    <max-pool-size>100</max-pool-size>
+                    <prefill>true</prefill>
+                </pool>
+                <security>
+                    <user-name>fks_scheduler</user-name>
+                    <password>${env.SECRET_POSTGRES_PASS_EIS_DB_PPA_PPA_DB_FKS_SCHEDULER}</password>
+                </security> 
+                <validation>
+                    <validate-on-match>false</validate-on-match>
+                    <background-validation>true</background-validation>
+                    <background-validation-millis>10000</background-validation-millis>
+                    <check-valid-connection-sql>SELECT 1</check-valid-connection-sql>
+                </validation>
+                <timeout>
+                    <idle-timeout-minutes>1</idle-timeout-minutes>
+                </timeout>
+            </datasource>
+            <drivers>
+                <driver name="postgresql" module="org.postgresql.jdbc">
+                    <xa-datasource-class>org.postgresql.xa.PGXADataSource</xa-datasource-class>
+                </driver>
+                <driver name="oracle" module="com.oracle">
+                    <xa-datasource-class>oracle.jdbc.xa.client.OracleXADataSource</xa-datasource-class>
+                </driver>
+                <driver name="h2" module="com.h2database.h2">
+                    <xa-datasource-class>org.h2.jdbcx.JdbcDataSource</xa-datasource-class>
+                </driver>
+                <driver name="mysql" module="com.mysql">
+                    <driver-class>com.mysql.jdbc.Driver</driver-class>
+                    <xa-datasource-class>com.mysql.jdbc.jdbc2.optional.MysqlXADataSource</xa-datasource-class>
+                </driver>
+                <driver name="postgresqlro" module="ru.lanit.jdbc.postgresqlro:main"/>
+            </drivers>
+        </datasources>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:deployment-scanner:2.0">
+            <deployment-scanner path="deployments" relative-to="jboss.server.base.dir" scan-interval="5000" runtime-failure-causes-rollback="${jboss.deployment.scanner.rollback.on.failure:false}" deployment-timeout="1200"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:discovery:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:distributable-web:2.0" default-session-management="default" default-single-sign-on-management="default">
+            <infinispan-session-management name="default" cache-container="web" granularity="SESSION">
+                <local-affinity/>
+            </infinispan-session-management>
+            <infinispan-single-sign-on-management name="default" cache-container="web" cache="sso"/>
+            <local-routing/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:ee:5.0">
+            <global-modules>
+                <module name="ru.lanit.eis.logging" slot="main" services="true"/>
+            </global-modules>
+            <spec-descriptor-property-replacement>false</spec-descriptor-property-replacement>                
+            <concurrent>
+                <context-services>
+                    <context-service name="default" jndi-name="java:jboss/ee/concurrency/context/default" use-transaction-setup-provider="true"/>
+                </context-services>
+                <managed-thread-factories>
+                    <managed-thread-factory name="default" jndi-name="java:jboss/ee/concurrency/factory/default" context-service="default"/>
+                </managed-thread-factories>
+                <managed-executor-services>
+                    <managed-executor-service name="default" jndi-name="java:jboss/ee/concurrency/executor/default" context-service="default" hung-task-threshold="180000" keepalive-time="5000"    />
+                        <managed-executor-service name="wm" jndi-name="java:/wm/default" hung-task-threshold="180000" core-threads="50" max-threads="50" queue-length="100000" keepalive-time="3000" context-service="default" long-running-tasks="false"/>
+                        <managed-executor-service name="wm-user-control" jndi-name="java:/wm/user-control" hung-task-threshold="180000" core-threads="50" max-threads="50" queue-length="100000" keepalive-time="3000" context-service="default" long-running-tasks="false"/>
+                        <managed-executor-service name="wm-ppa-tp" jndi-name="java:/wm/ppa-tp" hung-task-threshold="180000" core-threads="50" max-threads="50" queue-length="100000" keepalive-time="3000" context-service="default" long-running-tasks="false"/>
+                        <managed-executor-service name="wm-ppa" jndi-name="java:/wm/ppa" hung-task-threshold="180000" core-threads="50" max-threads="50" queue-length="100000" keepalive-time="3000" context-service="default" long-running-tasks="false"/>
+                        <managed-executor-service name="esiaFacadeExecutor" jndi-name="java:/wm/esiaFacadeExecutor" hung-task-threshold="180000" core-threads="50" max-threads="50" queue-length="100000" keepalive-time="3000" context-service="default" long-running-tasks="false"/>
+                        <managed-executor-service name="quartz-async-tp" jndi-name="java:/wm/quartz-async-tp" hung-task-threshold="180000" core-threads="50" max-threads="50" queue-length="60000" keepalive-time="3000" context-service="default" long-running-tasks="false"/>
+                </managed-executor-services>
+                <managed-scheduled-executor-services>
+                    <managed-scheduled-executor-service name="default" jndi-name="java:jboss/ee/concurrency/scheduler/default" context-service="default" hung-task-threshold="180000" keepalive-time="3000"/>
+                    <managed-scheduled-executor-service name="ejbCallCacheBeanScheduledExecutor" jndi-name="java:jboss/ee/scheduler/ppa/ejbCallCacheBeanScheduledExecutor" context-service="default" core-threads="50" hung-task-threshold="180000" keepalive-time="3000"/>
+                </managed-scheduled-executor-services>
+            </concurrent>
+            <default-bindings context-service="java:jboss/ee/concurrency/context/default" datasource="java:jboss/datasources/ExampleDS" managed-executor-service="java:jboss/ee/concurrency/executor/default" managed-scheduled-executor-service="java:jboss/ee/concurrency/scheduler/default" managed-thread-factory="java:jboss/ee/concurrency/factory/default"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:ee-security:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:ejb3:8.0">
+            <session-bean>
+                <stateless>
+                    <bean-instance-pool-ref pool-name="slsb-strict-max-pool"/>
+                </stateless>
+                <stateful default-access-timeout="5000" cache-ref="simple" passivation-disabled-cache-ref="simple"/>
+                <singleton default-access-timeout="5000"/>
+
+            </session-bean>
+            <mdb>
+                <resource-adapter-ref resource-adapter-name="activemq-rar"/>
+                <bean-instance-pool-ref pool-name="mdb-strict-max-pool"/>
+            </mdb>
+            <pools>
+                <bean-instance-pools>
+                    <strict-max-pool name="mdb-strict-max-pool" derive-size="from-cpu-count" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="MINUTES"/>
+                    <strict-max-pool name="slsb-strict-max-pool" max-pool-size="600" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="MINUTES"/>
+                    <strict-max-pool name="login-to-user-cache-bean-pool" max-pool-size="60" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="SECONDS"/>
+                    <strict-max-pool name="ejb-call-cache-bean-pool" max-pool-size="600" instance-acquisition-timeout="5" instance-acquisition-timeout-unit="SECONDS"/>
+                </bean-instance-pools>
+            </pools>
+            <caches>
+                <cache name="simple"/>
+                <cache name="distributable" passivation-store-ref="infinispan" aliases="passivating clustered"/>
+            </caches>
+            <passivation-stores>
+                <passivation-store name="infinispan" cache-container="ejb" max-size="10000"/>
+            </passivation-stores>
+            <async thread-pool-name="default"/>
+            <timer-service thread-pool-name="default" default-data-store="default-file-store">
+                <data-stores>
+                    <file-data-store name="default-file-store" path="timer-service-data" relative-to="jboss.server.data.dir"/>
+                </data-stores>
+            </timer-service>
+            <remote cluster="ejb" connectors="http-remoting-connector" thread-pool-name="default">
+                <channel-creation-options>
+                    <option name="READ_TIMEOUT" value="${prop.remoting-connector.read.timeout:20}" type="xnio"/>
+                    <option name="MAX_OUTBOUND_MESSAGES" value="1234" type="remoting"/>
+                </channel-creation-options>
+            </remote>
+            <thread-pools>
+                <thread-pool name="default">
+                    <max-threads count="10"/>
+                    <keepalive-time time="100" unit="milliseconds"/>
+                </thread-pool>
+            </thread-pools>
+<!--            <iiop enable-by-default="false" use-qualified-name="false"/> -->
+            <default-security-domain value="other"/>
+            <default-missing-method-permissions-deny-access value="true"/>
+            <statistics enabled="true"/>
+            <log-system-exceptions value="true"/>
+        </subsystem>
+        <subsystem xmlns="urn:wildfly:elytron:12.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <providers>
+                <aggregate-providers name="combined-providers">
+                    <providers name="elytron"/>
+                    <providers name="openssl"/>
+                </aggregate-providers>
+                <provider-loader name="elytron" module="org.wildfly.security.elytron"/>
+                <provider-loader name="openssl" module="org.wildfly.openssl"/>
+            </providers>
+            <audit-logging>
+                <file-audit-log name="local-audit" path="audit.log" relative-to="jboss.server.log.dir" format="JSON"/>
+            </audit-logging>
+            <security-domains>
+                <security-domain name="ApplicationDomain" default-realm="ApplicationRealm" permission-mapper="default-permission-mapper">
+                    <realm name="ApplicationRealm" role-decoder="groups-to-roles"/>
+                    <realm name="local"/>
+                </security-domain>
+                <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper">
+                    <realm name="ManagementRealm" role-decoder="groups-to-roles"/>
+                    <realm name="local" role-mapper="super-user-mapper"/>
+                </security-domain>
+            </security-domains>
+            <security-realms>
+                <identity-realm name="local" identity="$local"/>
+                <properties-realm name="ApplicationRealm">
+                    <users-properties path="/etc/wildfly/application-users.properties" digest-realm-name="ApplicationRealm"/>
+                    <groups-properties path="/etc/wildfly/application-roles.properties"/>
+                </properties-realm>
+                <properties-realm name="ManagementRealm">
+                    <users-properties path="mgmt-users.properties" relative-to="jboss.server.config.dir" digest-realm-name="ManagementRealm"/>
+                    <groups-properties path="mgmt-groups.properties" relative-to="jboss.server.config.dir"/>
+                </properties-realm>
+            </security-realms>
+            <mappers>
+                <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
+                    <permission-mapping>
+                        <principal name="anonymous"/>
+                        <permission-set name="default-permissions"/>
+                    </permission-mapping>
+                    <permission-mapping match-all="true">
+                        <permission-set name="login-permission"/>
+                        <permission-set name="default-permissions"/>
+                    </permission-mapping>
+                </simple-permission-mapper>
+                <constant-realm-mapper name="local" realm-name="local"/>
+                <simple-role-decoder name="groups-to-roles" attribute="groups"/>
+                <constant-role-mapper name="super-user-mapper">
+                    <role name="SuperUser"/>
+                </constant-role-mapper>
+            </mappers>
+            <permission-sets>
+                <permission-set name="login-permission">
+                    <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+                </permission-set>
+                <permission-set name="default-permissions">
+                    <permission class-name="org.wildfly.extension.batch.jberet.deployment.BatchPermission" module="org.wildfly.extension.batch.jberet" target-name="*"/>
+                    <permission class-name="org.wildfly.transaction.client.RemoteTransactionPermission" module="org.wildfly.transaction.client"/>
+                    <permission class-name="org.jboss.ejb.client.RemoteEJBPermission" module="org.jboss.ejb-client"/>
+                </permission-set>
+            </permission-sets>
+            <http>
+                <http-authentication-factory name="management-http-authentication" security-domain="ManagementDomain" http-server-mechanism-factory="global">
+                    <mechanism-configuration>
+                        <mechanism mechanism-name="DIGEST">
+                            <mechanism-realm realm-name="ManagementRealm"/>
+                        </mechanism>
+                    </mechanism-configuration>
+                </http-authentication-factory>
+                <provider-http-server-mechanism-factory name="global"/>
+            </http>
+            <sasl>
+                <sasl-authentication-factory name="application-sasl-authentication" sasl-server-factory="configured" security-domain="ApplicationDomain">
+                    <mechanism-configuration>
+                        <mechanism mechanism-name="JBOSS-LOCAL-USER" realm-mapper="local"/>
+                        <mechanism mechanism-name="DIGEST-MD5">
+                            <mechanism-realm realm-name="ApplicationRealm"/>
+                        </mechanism>
+                    </mechanism-configuration>
+                </sasl-authentication-factory>
+                <sasl-authentication-factory name="management-sasl-authentication" sasl-server-factory="configured" security-domain="ManagementDomain">
+                    <mechanism-configuration>
+                        <mechanism mechanism-name="JBOSS-LOCAL-USER" realm-mapper="local"/>
+                        <mechanism mechanism-name="DIGEST-MD5">
+                            <mechanism-realm realm-name="ManagementRealm"/>
+                        </mechanism>
+                    </mechanism-configuration>
+                </sasl-authentication-factory>
+                <configurable-sasl-server-factory name="configured" sasl-server-factory="elytron">
+                    <properties>
+                        <property name="wildfly.sasl.local-user.default-user" value="$local"/>
+                    </properties>
+                </configurable-sasl-server-factory>
+                <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
+                    <filters>
+                        <filter provider-name="WildFlyElytron"/>
+                    </filters>
+                </mechanism-provider-filtering-sasl-server-factory>
+                <provider-sasl-server-factory name="global"/>
+            </sasl>
+        </subsystem>
+<!--        <subsystem xmlns="urn:jboss:domain:iiop-openjdk:2.1">
+            <orb socket-binding="iiop"/>
+            <initializers security="identity" transactions="spec"/>
+            <security server-requires-ssl="false" client-requires-ssl="false"/>
+        </subsystem> -->
+        <subsystem xmlns="urn:jboss:domain:infinispan:11.0">
+            <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
+                <local-cache name="default">
+                    <transaction mode="BATCH"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="web" default-cache="passivation" module="org.wildfly.clustering.web.infinispan">
+                <local-cache name="passivation">
+                    <locking isolation="REPEATABLE_READ"/>
+                    <transaction mode="BATCH"/>
+                    <file-store passivation="true" purge="false"/>
+                </local-cache>
+                <local-cache name="sso"/>
+            </cache-container>
+            <cache-container name="ejb" aliases="sfsb" default-cache="passivation" module="org.wildfly.clustering.ejb.infinispan">
+                <local-cache name="passivation">
+                    <locking isolation="REPEATABLE_READ"/>
+                    <transaction mode="BATCH"/>
+                    <file-store passivation="true" purge="false"/>
+                </local-cache>
+            </cache-container>
+            <cache-container name="server" default-cache="default" module="org.wildfly.clustering.server">
+                <local-cache name="default"/>
+            </cache-container>
+            <cache-container name="hibernate" module="org.infinispan.hibernate-cache">
+                <local-cache name="entity">
+                    <transaction mode="NON_XA"/>
+                    <heap-memory size="10000"/>
+                    <expiration max-idle="100000"/>
+                </local-cache>
+                <local-cache name="local-query">
+                    <heap-memory size="10000"/>
+                    <expiration max-idle="100000"/>
+                </local-cache>
+                <local-cache name="timestamps"/>
+            </cache-container>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:io:3.0">
+            <worker name="default"    />
+            <buffer-pool name="default"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jaxrs:2.0"/>
+        <subsystem xmlns="urn:jboss:domain:jca:5.0">
+            <archive-validation enabled="true" fail-on-error="true" fail-on-warn="false"/>
+            <bean-validation enabled="true"/>
+            <default-workmanager>
+                <short-running-threads>
+                    <core-threads count="50"/>
+                    <queue-length count="50"/>
+                    <max-threads count="50"/>
+                    <keepalive-time time="10" unit="seconds"/>
+                </short-running-threads>
+                <long-running-threads>
+                    <core-threads count="50"/>
+                    <queue-length count="50"/>
+                    <max-threads count="50"/>
+                    <keepalive-time time="10" unit="seconds"/>
+                </long-running-threads>
+            </default-workmanager>
+            <cached-connection-manager/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jdr:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:jmx:1.3">
+            <expose-resolved-model/>
+            <expose-expression-model/>
+            <remoting-connector/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jpa:1.1">
+            <jpa default-datasource="" default-extended-persistence-inheritance="DEEP"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:jsf:1.1"/>
+        <subsystem xmlns="urn:jboss:domain:jsr77:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:mail:4.0">            
+        <mail-session name="ppa" debug="false" jndi-name="java:jboss/mail/Ppa" from="${env.SECRET_WILDFLY_MAIL_FROM}">
+            <smtp-server outbound-socket-binding-ref="ppa-mail" ssl="false"  />
+        </mail-session>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:messaging-activemq:12.0">
+            <server name="default">
+                <security-setting name="#">
+                    <role name="guest" send="true" consume="true" create-non-durable-queue="true" delete-non-durable-queue="true"/>
+                </security-setting>
+                <address-setting name="#" dead-letter-address="jms.queue.DLQ" expiry-address="jms.queue.ExpiryQueue" max-size-bytes="10485760" page-size-bytes="2097152" message-counter-history-day-limit="10"/>
+                <http-connector name="http-connector" socket-binding="http" endpoint="http-acceptor"/>
+                <http-connector name="http-connector-throughput" socket-binding="http" endpoint="http-acceptor-throughput">
+                    <param name="batch-delay" value="50"/>
+                </http-connector>
+                <in-vm-connector name="in-vm" server-id="0">
+                    <param name="buffer-pooling" value="false"/>
+                </in-vm-connector>
+                <http-acceptor name="http-acceptor" http-listener="default"/>
+                <http-acceptor name="http-acceptor-throughput" http-listener="default">
+                    <param name="batch-delay" value="50"/>
+                    <param name="direct-deliver" value="false"/>
+                </http-acceptor>
+                <in-vm-acceptor name="in-vm" server-id="0">
+                    <param name="buffer-pooling" value="false"/>
+                </in-vm-acceptor>
+                <!-- No integrated AMQ resources
+                <jms-queue name="ExpiryQueue" entries="java:/jms/queue/ExpiryQueue"/>
+                <jms-queue name="DLQ" entries="java:/jms/queue/DLQ"/>
+                <connection-factory name="InVmConnectionFactory" entries="java:/ConnectionFactory" connectors="in-vm"/>
+                <connection-factory name="RemoteConnectionFactory" entries="java:jboss/exported/jms/RemoteConnectionFactory" connectors="http-connector"/>
+                <pooled-connection-factory name="activemq-ra" entries="java:/JmsXA java:jboss/DefaultJMSConnectionFactory" connectors="in-vm" transaction="xa"/>
+                -->
+            </server>
+        </subsystem>
+        <subsystem xmlns="urn:wildfly:microprofile-config-smallrye:1.0"/>
+        <subsystem xmlns="urn:wildfly:metrics:1.0" security-enabled="false" exposed-subsystems="*" prefix="${wildfly.metrics.prefix:wildfly}"/>
+        <subsystem xmlns="urn:wildfly:health:1.0" security-enabled="false"/>
+        <subsystem xmlns="urn:wildfly:microprofile-health-smallrye:2.0" security-enabled="false"/>
+        <subsystem xmlns="urn:wildfly:microprofile-opentracing-smallrye:3.0">
+            <jaeger-tracer name="jaeger">
+                <sampler-configuration sampler-type="const" sampler-param="0.0"/>
+            </jaeger-tracer>
+        </subsystem>
+        <subsystem xmlns="urn:wildfly:microprofile-metrics-smallrye:2.0" security-enabled="false" exposed-subsystems="*" prefix="${wildfly.metrics.prefix:wildfly}"/>
+        <subsystem xmlns="urn:jboss:domain:naming:2.0">                
+            <bindings>
+            <lookup name="java:global/jdbc/pgzDB" lookup="java:/44fz/Pgz"/>
+            <lookup name="java:global/jdbc/Schedule_ex" lookup="java:/jdbc/Schedule_ex"/>
+            <lookup name="java:global/jdbc/ppaDSrwPostgres" lookup="java:/jdbc/ppaDSrwPostgres"/>
+            <lookup name="java:global/jdbc/ppaDSroPostgres" lookup="java:/jdbc/ppaDSroPostgres"/>
+            <lookup name="java:global/ejb/MenuFacade" lookup="ejb:fz44-ppa-ear/fz44-ppa-facade-ejb/MenuFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.MenuFacade"/>
+            <lookup name="java:global/ejb/PpaEjbConfiguration" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-service-ejb/PpaEjbConfigurationBean!ru.lanit.fz44.ejb.service.ppa.api.PpaEjbConfiguration"/>
+            <lookup name="java:global/ejb/UserServiceRemote" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-service-ejb/UserServiceRemoteBean!ru.lanit.fz44.ejb.service.ppa.api.UserServiceRemote"/>
+            <lookup name="java:global/ejb/UserFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/UserRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.UserRwFacade"/>
+            <lookup name="java:global/ejb/SystemConfigFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/SystemConfigRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.SystemConfigRwFacade"/>
+            <lookup name="java:global/ejb/PrivilegeFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/PrivilegeRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.PrivilegeFacade"/>
+            <lookup name="java:global/ejb/AgreementRequirementsFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/AgreementRequirementsRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.AgreementRequirementsFacade"/>
+            <lookup name="java:global/ejb/BudgetFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/BudgetRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.BudgetFacade"/>
+            <lookup name="java:global/ejb/ApproveCycleAccessFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/ApproveCycleAccessRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.ApproveCycleAccessFacade"/>
+            <lookup name="java:global/ejb/MailMessageFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/MailMessageRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.MailMessageRwFacade"/>
+            <lookup name="java:global/ejb/CryptoPluginStatisticsFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/CryptoPluginStatisticsRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.CryptoPluginStatisticsRwFacade"/>
+            <lookup name="java:global/ejb/RegistrationRequestFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/RegistrationRequestRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.RegistrationRequestFacade"/>
+            <lookup name="java:global/ejb/EtpFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/EtpRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.EtpFacade"/>
+            <lookup name="java:global/ejb/VsrzFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/VsrzRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.VsrzFacade"/>
+            <lookup name="java:global/ejb/AccountFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/AccountRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.AccountFacade"/>
+            <lookup name="java:global/ejb/WorkDaysFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/WorkDaysRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.WorkDaysFacade"/>
+            <lookup name="java:global/ejb/SiteAlertFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/SiteAlertRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.SiteAlertRwFacade"/>
+            <lookup name="java:global/ejb/OrganizationFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/OrganizationRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.OrganizationRwFacade"/>
+            <lookup name="java:global/ejb/OrganizationLinkFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/OrganizationLinkRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.OrganizationLinkFacade"/>
+            <lookup name="java:global/ejb/EgrulRemote" lookup="ejb:egrul/ejbEgrul/EgrulBean!ru.lanit.egrul.api.EgrulRemote"/>
+            <lookup name="java:global/ejb/EgripRemote" lookup="ejb:egrip/ejbEgrip/EgripBean!ru.lanit.egrip.api.EgripRemote"/>
+            <lookup name="java:global/ejb/InfoSystemFacade" lookup="ejb:fz44-ris-facade-ear/fz44-ris-facade-ejb/InfoSystemFacadeBean!ru.lanit.fz44.ejb.facade.ris.api.InfoSystemFacade"/>
+            <lookup name="java:global/ejb/ReportRegistryFacade" lookup="ejb:fz44-rep-facade-ear/fz44-rep-facade-ejb/ReportRegistryFacadeBean!ru.lanit.fz44.ejb.facade.rep.api.ReportRegistryFacade"/>
+            <lookup name="java:global/ejb/AgencyClause223Service" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/AgencyClause223ServiceBean!ru.lanit.fz44.ejb.service.nsi.api.AgencyClause223Service"/>
+            <lookup name="java:global/ejb/OperatorEisService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OperatorEisServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OperatorEisService"/>
+            <lookup name="java:global/ejb/OperatorKtruService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OperatorKtruServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OperatorKtruService"/>
+            <lookup name="java:global/ejb/RegionalOperatorService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionalOperatorServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionalOperatorService"/>
+            <lookup name="java:global/ejb/RegionalOperatorTkoService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionalOperatorTkoServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionalOperatorTkoService"/>
+            <lookup name="java:global/ejb/JuristicKindServiceBean" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/JuristicKindServiceBean!ru.lanit.fz44.ejb.service.nsi.api.JuristicKindService"/>
+            <lookup name="java:global/ejb/PpoService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/PpoServiceBean!ru.lanit.fz44.ejb.service.nsi.api.PpoService"/>
+            <lookup name="java:global/ejb/OkatoService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkatoService!ru.lanit.fz44.ejb.service.nsi.api.OkatoService"/>
+            <lookup name="java:global/ejb/OkopfService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkopfServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkopfService"/>
+            <lookup name="java:global/ejb/OkfsService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkfsService!ru.lanit.fz44.ejb.service.nsi.api.OkfsService"/>
+            <lookup name="java:global/ejb/OkopfOldService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkopfOldServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkopfOldService"/>
+            <lookup name="java:global/ejb/OkatoOktmoLinkService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkatoOktmoLinkServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkatoOktmoLinkService"/>
+            <lookup name="java:global/ejb/NsiReceiptCodesFacade" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/NsiReceiptCodesFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.NsiReceiptCodesFacade"/>
+            <lookup name="java:global/ejb/KladrService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/KladrServiceBean!ru.lanit.fz44.ejb.service.nsi.api.KladrService"/>
+            <lookup name="java:global/ejb/RegionService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionService"/>
+            <lookup name="java:global/ejb/RegionFacade" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.RegionFacade"/>
+            <lookup name="java:global/ejb/BudgetService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/BudgetServiceBean!ru.lanit.fz44.ejb.service.nsi.api.BudgetService"/>
+            <lookup name="java:global/ejb/TofkService" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/TofkServiceBean!ru.lanit.fz44.ejb.service.nsi.api.TofkService"/>
+            <lookup name="java:global/ejb/RemoteFileUpdater" lookup="ejb:eis-filestore-ear/eis-filestore-ejb/FileUpdaterBean!ru.lanit.fz44.filestore.ejb.api.FileUpdater"/>
+            <lookup name="java:global/ejb/ControlSubjectsFacade" lookup="ejb:fz44-psk-facade-ear/fz44-psk-facade-ejb/ControlSubjectsFacadeBean!ru.lanit.fz44.ejb.facade.psk.api.ControlSubjectsFacade"/>
+            <lookup name="java:global/ejb/CalendarEventTypeFacade" lookup="ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarEventTypeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarEventTypeFacade"/>
+            <lookup name="java:global/ejb/CalendarNotifyTypeFacade" lookup="ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotifyTypeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotifyTypeFacade"/>
+            <lookup name="java:global/ejb/CalendarEventPrivilegeFacade" lookup="ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarEventPrivilegeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarEventPrivilegeFacade"/>
+            <lookup name="java:global/ejb/CalendarNotifyPrivilegeFacade" lookup="ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotifyPrivilegeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotifyPrivilegeFacade"/>
+            <lookup name="java:global/ejb/AgreementFacade" lookup="ejb:fz44-routes-ear/fz44-routes-facade-ejb/AgreementFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.AgreementFacade"/>
+            <lookup name="java:global/ejb/DocumentFacade" lookup="ejb:fz44-routes-ear/fz44-routes-facade-ejb/DocumentFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.DocumentFacade"/>
+            <lookup name="java:global/ejb/MembersFacade" lookup="ejb:fz44-routes-ear/fz44-routes-facade-ejb/MembersFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.MembersFacade"/>
+            <lookup name="java:global/ejb/ResultLogFacade" lookup="ejb:fz44-routes-ear/fz44-routes-facade-ejb/ResultLogFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.ResultLogFacade"/>
+            <lookup name="java:global/ejb/RouteFacade" lookup="ejb:fz44-routes-ear/fz44-routes-facade-ejb/RouteFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.RouteFacade"/>
+            <lookup name="java:global/ejb/RouteStageFacade" lookup="ejb:fz44-routes-ear/fz44-routes-facade-ejb/RouteStageFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.RouteStageFacade"/>
+            <lookup name="java:global/ejb/BankGuaranteeFacade" lookup="ejb:fz44-bank-guarantee-facade-ear/fz44-bank-guarantee-facade-ejb/BankGuaranteeFacadeBean!ru.lanit.fz44.ejb.facade.bankguarantee.api.BankGuaranteeFacade"/>
+            <lookup name="java:global/ejb/PropertyServiceBean" lookup="ejb:user-control-config-ejb-ear/user-control-config-ejb/PropertyServiceBean!ru.lanit.auth.user.control.config.api.PropertyService"/>
+            <lookup name="java:global/ejb/UserControlServiceBean" lookup="ejb:user-control-service-ejb-ear/user-control-service-ejb/UserControlServiceBean!ru.lanit.auth.user.control.service.UserControlService"/>
+            <lookup name="java:global/ejb/BiklessBankFacade" lookup="ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/BiklessBankRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.BiklessBankFacade"/>
+            <lookup name="java:global/ejb/InfoProvider" lookup="ejb:eis-filestore-ear/eis-filestore-ejb/FileStoreManager!ru.lanit.fz44.filestore.ejb.api.InfoProvider"/>
+            <lookup name="java:global/ejb/EjbCallCacheInvalidator" lookup="ejb:fz44-ppa-rw-ear/fz44-ejb-cache-ejb/EjbCallCacheBean!ru.lanit.fz44.cache.ejb.api.EjbCallCacheInvalidator"/>
+            <lookup name="java:global/ejb/CalendarNotificationFacade" lookup="ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotificationFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotificationFacade"/>
+            <lookup name="java:global/ejb/DocStoreOKFacadeBean" lookup="ejb:docstore-ear/docstore-facade-ws/DocStoreFacadeBean!ru.lanit.docstore.facade.ejb.api.DocStoreFacade"/>
+            <lookup name="java:global/ejb/NsiPurchaseTypeForPpaFacade" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/NsiPurchaseTypeForPpaFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.NsiPurchaseTypeForPpaFacade"/>
+            <lookup name="java:global/ejb/DocStoreFCSFacadeBean" lookup="ejb:docstore-ear/docstore-facade-ws/DocStoreFacadeBean!ru.lanit.docstore.facade.ejb.api.DocStoreFacade"/>
+            <lookup name="java:global/ejb/NsiOkpd2Service" lookup="ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/NsiOkpd2ServiceBean!ru.lanit.fz44.ejb.service.nsi.api.NsiOkpd2Service"/>
+            <simple name="java:global/cryptoClientConsulPath" value="fz44/crypto/eis/Client"/>
+            <simple name="java:global/cryptoHashClientConsulPath" value="fz44/crypto/eis/HashClient"/>
+            <simple name="java:global/eventOutboxKafkaUrl" value="${env.EVENT_OUTBOX_KAFKA_BOOTSTRAP_SERVERS}"/>
+            </bindings>
+            <remote-naming/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:pojo:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:remoting:4.0">
+            <http-connector name="http-remoting-connector" connector-ref="default"/>                
+            <outbound-connections>
+                <remote-outbound-connection name="remote-ejb-connection-egrul" outbound-socket-binding-ref="remote-ejb-egrul" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-egrip" outbound-socket-binding-ref="remote-ejb-egrip" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-ris" outbound-socket-binding-ref="remote-ejb-ris" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-rep" outbound-socket-binding-ref="remote-ejb-rep" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-nsi" outbound-socket-binding-ref="remote-ejb-nsi" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-psk" outbound-socket-binding-ref="remote-ejb-psk" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-calendar" outbound-socket-binding-ref="remote-ejb-calendar" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-routes" outbound-socket-binding-ref="remote-ejb-routes" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-rbg" outbound-socket-binding-ref="remote-ejb-rbg" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-uc" outbound-socket-binding-ref="remote-ejb-uc" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-fstore" outbound-socket-binding-ref="remote-ejb-fstore" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-dstore-ok" outbound-socket-binding-ref="remote-ejb-dstore-ok" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+                <remote-outbound-connection name="remote-ejb-connection-dstore-fcs" outbound-socket-binding-ref="remote-ejb-dstore-fcs" protocol="http-remoting" security-realm="ejb-security-realm" username="ejb">
+                    <properties>
+                        <property name="SASL_POLICY_NOANONYMOUS" value="false"/>
+                        <property name="SSL_ENABLED" value="false"/>
+                    </properties>
+                </remote-outbound-connection>
+            </outbound-connections>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:request-controller:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:resource-adapters:6.0">
+            <resource-adapters>                    
+                    
+                <resource-adapter id="activemq-rar.rar" statistics-enabled="true">  
+                     <archive>activemq-rar-5.15.6.rar</archive>
+                     <transaction-support>XATransaction</transaction-support>
+                     <config-property name="UseInboundSession">
+                         false
+                     </config-property>
+                     <config-property name="ServerUrl">  
+                         ${env.SECRET_WILDFLY_AMQ_EIS_INT_URL_ADDRESS}?initialReconnectDelay=300000
+                     </config-property>  
+                     <connection-definitions>
+                         <connection-definition class-name="org.apache.activemq.ra.ActiveMQManagedConnectionFactory" jndi-name="java:jboss/eisQueueConnectionFactory" enabled="true" pool-name="java:jboss/eisQueueConnectionFactory" tracking="false">  
+                             <config-property name="useSessionArgs">true</config-property>
+                             <xa-pool>  
+                                 <min-pool-size>1</min-pool-size>  
+                                 <max-pool-size>10</max-pool-size>  
+                                 <prefill>false</prefill>  
+                                 <is-same-rm-override>false</is-same-rm-override>  
+                             </xa-pool>  
+                         </connection-definition>
+                         <connection-definition class-name="org.apache.activemq.ra.ActiveMQManagedConnectionFactory" jndi-name="java:jboss/kafkaExportConnectionFactory" enabled="true" pool-name="java:jboss/kafkaExportConnectionFactory" tracking="false">  
+                             <config-property name="useSessionArgs">true</config-property>
+                             <xa-pool>  
+                                 <min-pool-size>1</min-pool-size>  
+                                 <max-pool-size>10</max-pool-size>  
+                                 <prefill>false</prefill>  
+                                 <is-same-rm-override>false</is-same-rm-override>  
+                             </xa-pool>  
+                         </connection-definition>
+                     </connection-definitions>  
+                     <admin-objects>          
+                         <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:jboss/jms/queue/internalNrgQueue" use-java-context="true" pool-name="internalNrgQueue">  
+                             <config-property name="PhysicalName">internalNrgQueue 
+                             </config-property>  
+                         </admin-object>          
+                         <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:jboss/jms/queue/kafkaExportQueue" use-java-context="true" pool-name="kafkaExportQueue">  
+                             <config-property name="PhysicalName">kafkaExportQueue 
+                             </config-property>  
+                         </admin-object>
+                     </admin-objects>  
+                </resource-adapter>                    
+            </resource-adapters>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:sar:1.0"/>
+        <subsystem xmlns="urn:jboss:domain:security:2.0">
+            <security-domains>
+                <security-domain name="other" cache-type="default">
+                    <authentication>
+                        <login-module code="Remoting" flag="optional">
+                            <module-option name="password-stacking" value="useFirstPass"/>
+                        </login-module>
+                        <login-module code="RealmDirect" flag="required">
+                            <module-option name="password-stacking" value="useFirstPass"/>
+                        </login-module>
+                    </authentication>
+                </security-domain>
+                <security-domain name="jboss-web-policy" cache-type="default">
+                    <authorization>
+                        <policy-module code="Delegating" flag="required"/>
+                    </authorization>
+                </security-domain>
+                <security-domain name="jboss-ejb-policy" cache-type="default">
+                    <authorization>
+                        <policy-module code="Delegating" flag="required"/>
+                    </authorization>
+                </security-domain>
+                <security-domain name="jaspitest" cache-type="default">
+                    <authentication-jaspi>
+                        <login-module-stack name="dummy">
+                            <login-module code="Dummy" flag="optional"/>
+                        </login-module-stack>
+                        <auth-module code="Dummy"/>
+                    </authentication-jaspi>
+                </security-domain>
+                <!-- {% include "security-domain-app.xml.j2" ignore missing %} -->
+            </security-domains>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
+            <deployment-permissions>
+                <maximum-set>
+                    <permission class="java.security.AllPermission"/>
+                </maximum-set>
+            </deployment-permissions>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:transactions:5.0">
+            <core-environment node-identifier="${jboss.tx.node.id:1}">
+                <process-id>
+                    <uuid/>
+                </process-id>
+            </core-environment>
+            <recovery-environment socket-binding="txn-recovery-environment" status-socket-binding="txn-status-manager"/>
+            <coordinator-environment statistics-enabled="true" default-timeout="1200"/>
+            <object-store path="tx-object-store" relative-to="jboss.server.data.dir"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:undertow:11.0" statistics-enabled="true" default-server="default-server" default-virtual-host="default-host" default-servlet-container="default" default-security-domain="other">
+            <buffer-cache name="default"/>
+            <server name="default-server">
+                <ajp-listener name="ajp" socket-binding="ajp" enabled="false"/>
+                    <http-listener name="default" max-parameters="10000" socket-binding="http" max-header-size="1048576" max-post-size="104857600" redirect-socket="https" enable-http2="true" allow-unescaped-characters-in-url="true" url-charset="UTF-8"/>
+                    <https-listener name="https" socket-binding="https" max-header-size="1048576" max-post-size="104857600" security-realm="ApplicationRealm" enable-http2="true"  url-charset="UTF-8"/>
+                <host name="default-host" alias="localhost">
+                    <location name="/" handler="welcome-content"/>
+                    <filter-ref name="server-header"/>
+                    <filter-ref name="x-powered-by-header"/>
+                    <http-invoker />
+                </host>
+            </server>
+            <servlet-container name="default"  default-session-timeout="31" default-encoding="UTF-8">
+                <jsp-config/>
+                <websockets/>
+            </servlet-container>
+            <handlers>
+                <file name="welcome-content" path="${jboss.home.dir}/welcome-content"/>
+            </handlers>
+            <filters>
+                <response-header name="server-header" header-name="Server" header-value="WildFly/11"/>
+                <response-header name="x-powered-by-header" header-name="X-Powered-By" header-value="Undertow/1"/>
+            </filters>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:webservices:2.0">
+            <wsdl-host>${jboss.bind.address:0.0.0.0}</wsdl-host>
+            <endpoint-config name="Standard-Endpoint-Config"/>
+            <endpoint-config name="Recording-Endpoint-Config">
+                <pre-handler-chain name="recording-handlers" protocol-bindings="##SOAP11_HTTP ##SOAP11_HTTP_MTOM ##SOAP12_HTTP ##SOAP12_HTTP_MTOM">
+                    <handler name="RecordingHandler" class="org.jboss.ws.common.invocation.RecordingServerHandler"/>
+                </pre-handler-chain>
+            </endpoint-config>
+            <endpoint-config name="LKP-Endpoint-Config">
+                <pre-handler-chain name="custom-endpoint-handlers">
+                <handler name="ServerRequestContextSOAPHandler" class="ru.lanit.lkp.ws.context.ServerRequestContextSOAPHandler"/>
+                </pre-handler-chain>
+            </endpoint-config>
+            <client-config name="LKP-Client-Config">
+                <pre-handler-chain name="custom-client-handlers">
+                <handler name="ClientRequestContextSOAPHandler" class="ru.lanit.lkp.ws.context.ClientRequestContextSOAPHandler"/>
+                </pre-handler-chain>
+                </client-config>
+            <client-config name="Standard-Client-Config"/>
+        </subsystem>
+        <subsystem xmlns="urn:jboss:domain:weld:4.0"/>
+    </profile>
+    <interfaces>
+        <interface name="management">
+            <inet-address value="${jboss.bind.address.management:0.0.0.0}"/>
+        </interface>
+        <interface name="public">
+            <inet-address value="${jboss.bind.address:0.0.0.0}"/>
+        </interface>
+    </interfaces>
+    <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+        <socket-binding name="management-http" interface="management" port="${jboss.management.http.port:9990}"/>
+        <socket-binding name="management-https" interface="management" port="${jboss.management.https.port:9993}"/>
+        <socket-binding name="ajp" port="${jboss.ajp.port:8009}"/>
+        <socket-binding name="http" port="${jboss.http.port:8080}"/>
+        <socket-binding name="https" port="${jboss.https.port:8443}"/>
+        <socket-binding name="txn-recovery-environment" port="4712"/>
+        <socket-binding name="txn-status-manager" port="4713"/>
+<!--        <socket-binding name="iiop" interface="unsecure" port="3528"/>
+        <socket-binding name="iiop-ssl" interface="unsecure" port="3529"/> -->            
+        <outbound-socket-binding name="ppa-mail">
+            <remote-destination host="${env.SECRET_WILDFLY_MAIL_SERVER}" port="25"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-egrul">
+            <remote-destination host="127.0.0.1" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-egrip">
+            <remote-destination host="127.0.0.1" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-ris">
+            <remote-destination host="priv-ris-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-rep">
+            <remote-destination host="priv-rep-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-nsi">
+            <remote-destination host="priv-nsi-facade-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-psk">
+            <remote-destination host="priv-psk-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-calendar">
+            <remote-destination host="priv-calendar-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-routes">
+            <remote-destination host="priv-routes-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-rbg">
+            <remote-destination host="priv-rbg-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-uc">
+            <remote-destination host="common-user-control-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-fstore">
+            <remote-destination host="priv-filestore-eis-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-dstore-ok">
+            <remote-destination host="common-dstore-ok-service" port="8080"/>
+        </outbound-socket-binding>
+        <outbound-socket-binding name="remote-ejb-dstore-fcs">
+            <remote-destination host="priv-dstore-fcs-service" port="8080"/>
+        </outbound-socket-binding>
+    </socket-binding-group>
+</server>
