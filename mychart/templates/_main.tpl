@@ -52,8 +52,7 @@
             <extension module="org.jboss.as.modcluster"/>
             <extension module="org.wildfly.extension.clustering.singleton"/>
             {{- end }}
-
-    <!--        <extension module="org.wildfly.iiop-openjdk"/> -->
+            <extension module="org.wildfly.iiop-openjdk"/> 
         </extensions>
         {{- include "wildfly-config.system-properties" . | indent 8 }}
         <management>
@@ -75,10 +74,10 @@
                     </server-identities>
                     <authentication>
                         <local default-user="$local" allowed-users="*" skip-group-loading="true"/>
-                        <properties path="/etc/wildfly/application-users.properties"/>
+                        <properties path="application-users.properties" relative-to="jboss.server.config.dir"/>
                     </authentication>
                     <authorization>
-                        <properties path="/etc/wildfly/application-roles.properties"/>
+                        <properties path="application-roles.properties" relative-to="jboss.server.config.dir"/>
                     </authorization>
                 </security-realm>
                 {{- include "wildfly-config.security-realms" . | indent 16 }}
@@ -88,9 +87,9 @@
                     <json-formatter name="json-formatter"/>
                 </formatters>
                 <handlers>
-                    <size-rotating-file-handler name="file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
+                    <file-handler name="file" formatter="json-formatter" path="audit-log.log" relative-to="jboss.server.data.dir"/>
                 </handlers>
-                <logger log-boot="false" log-read-only="false" enabled="{{ .Values.wildfly_audit_status | default "false" }}">
+                <logger log-boot="true" log-read-only="false" enabled="{{ .Values.wildfly_audit_status | default "false" }}">
                     <handlers>
                         <handler name="file"/>
                     </handlers>
@@ -133,15 +132,15 @@
         </management>
         <profile>
             <subsystem xmlns="urn:jboss:domain:logging:8.0">
-                <console-handler name="CONSOLE" >
+                <console-handler name="CONSOLE">
+                    <level name="INFO"/>            
                     <formatter>
-    <!--                 <pattern-formatter pattern="%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n"/> -->
                          {{- if eq (.Values.wildfly_system_logging | default "") "lkp" }}
-                         <named-formatter name="LKP-FORMATTER" />
+                         <named-formatter name="LKP-FORMATTER"/>
                          {{- else if .Values.wildfly_async_logging_enabled }}
-                         <named-formatter name="SIMPLE-FORMATTER" />
+                         <named-formatter name="SIMPLE-FORMATTER"/>
                          {{- else  }}
-                         <named-formatter name="EIS-FORMATTER" />
+                         <named-formatter name="EIS-FORMATTER"/>
                          {{- end }}
                     </formatter>
                 </console-handler>
@@ -163,9 +162,20 @@
                     </properties>
                 </custom-handler>
                 {{ end }}
-
+                <!-- <periodic-rotating-file-handler name="FILE" autoflush="true">
+                    <level name="INFO"/>
+                    <formatter>
+                        <named-formatter name="SIMPLE-FORMATTER"/>
+                    </formatter>
+                    <file relative-to="jboss.server.log.dir" path="server.log"/>
+                    <suffix value=".yyyy-MM-dd"/>
+                    <append value="true"/>
+                </periodic-rotating-file-handler> -->
                 {{- include "wildfly-config.logging" . | indent 16 }}
                 <logger category="com.arjuna">
+                    <level name="WARN"/>
+                </logger>
+                <logger category="io.jaegertracing.Configuration">
                     <level name="WARN"/>
                 </logger>
                 <logger category="org.jboss.as.config">
@@ -173,6 +183,9 @@
                 </logger>
                 <logger category="sun.rmi">
                     <level name="WARN"/>
+                </logger>
+                <logger category="com.arjuna.ats.jta">
+                    <level name="ERROR"/>
                 </logger>
                 {{- $ru_lanit_logging_user_set := false }}
                 {{- range .Values.wildfly_logging }}
@@ -182,17 +195,17 @@
                 {{- end }}
                 {{- if not $ru_lanit_logging_user_set }}
                 <logger category="ru.lanit">
-                    <level name="INFO"/>
+                    <level name="DEBUG"/>
                 </logger>
                 {{- end }}
-                <logger category="ru.lanit.monitoring.util.config">
-                    <level name="ERROR"/>
+                <logger category="org.springframework.webflow">
+                    <level name="DEBUG"/>
                 </logger>
-                <logger category="ru.lanit.monitoring.config">
-                    <level name="ERROR"/>
+                <logger category="org.hibernate.SQL">
+                    <level name="DEBUG"/>
                 </logger>
                 <root-logger>
-                    <level name="{{ .Values.wildfly_root_logger_level | default "ERROR" }}"/>
+                    <level name="{{ .Values.wildfly_root_logger_level | default "INFO" }}"/>
                     <handlers>
                         {{- if .Values.wildfly_async_logging_enabled }}
                         <handler name="ASYNC_CUSTOM_HANDLER"/>
@@ -220,7 +233,7 @@
                     <custom-formatter module="ru.lanit.eis.logging" class="ru.lanit.eis.logging.CustomPatternFormatter">
                 {{- end }}
                         <properties>
-                            <property name="pattern" value="%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p (%t) [%c{1}] [#m] #r#d %s%e%n"/>
+                            <property name="pattern" value="%K{level}%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p (%t) [%c{1}] [#m] #r#d %s%e%n"/>
                         </properties>
                     </custom-formatter>
                 </formatter>
@@ -239,7 +252,7 @@
             <subsystem xmlns="urn:jboss:domain:bean-validation:1.0"/>
             <subsystem xmlns="urn:jboss:domain:core-management:1.0"/>
             <subsystem xmlns="urn:jboss:domain:datasources:6.0">
-            {{- include "wildfly-config.datasources" . | indent 12 }}
+            {{- include "wildfly-config.datasources" . | indent 16}}
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:deployment-scanner:2.0">
             {{- $wildfly_blocking_timeout := 1200 }}
@@ -292,7 +305,7 @@
 
                 </session-bean>
                 <mdb>
-                    <resource-adapter-ref resource-adapter-name="activemq-rar"/>
+                    <resource-adapter-ref resource-adapter-name="${ejb.resource-adapter-name:activemq-ra.rar}"/>
                     <bean-instance-pool-ref pool-name="mdb-strict-max-pool"/>
                 </mdb>
                 <pools>
@@ -329,10 +342,10 @@
                 <thread-pools>
                     <thread-pool name="default">
                         <max-threads count="10"/>
-                        <keepalive-time time="100" unit="milliseconds"/>
+                        <keepalive-time time="60" unit="seconds"/>
                     </thread-pool>
                 </thread-pools>
-    <!--            <iiop enable-by-default="false" use-qualified-name="false"/> -->
+                <iiop enable-by-default="false" use-qualified-name="false"/>
                 <default-security-domain value="other"/>
                 <default-missing-method-permissions-deny-access value="{{ .Values.wildfly_missing_methods_deny_access | default true }}"/>
                 <statistics enabled="true"/>
@@ -370,8 +383,8 @@
                 <security-realms>
                     <identity-realm name="local" identity="$local"/>
                     <properties-realm name="ApplicationRealm">
-                        <users-properties path="/etc/wildfly/application-users.properties" digest-realm-name="ApplicationRealm"/>
-                        <groups-properties path="/etc/wildfly/application-roles.properties"/>
+                        <users-properties path="application-users.properties" relative-to="jboss.server.config.dir" digest-realm-name="ApplicationRealm"/>
+                        <groups-properties path="application-roles.properties" relative-to="jboss.server.config.dir"/>
                     </properties-realm>
                     <properties-realm name="ManagementRealm">
                         <users-properties path="mgmt-users.properties" relative-to="jboss.server.config.dir" digest-realm-name="ManagementRealm"/>
@@ -444,12 +457,30 @@
                     </mechanism-provider-filtering-sasl-server-factory>
                     <provider-sasl-server-factory name="global"/>
                 </sasl>
+                <tls>
+                    <key-stores>
+                        <key-store name="applicationKS">
+                            <credential-reference clear-text="password"/>
+                            <implementation type="JKS"/>
+                            <file path="application.keystore" relative-to="jboss.server.config.dir"/>
+                        </key-store>
+                    </key-stores>
+                    <key-managers>
+                        <key-manager name="applicationKM" key-store="applicationKS" generate-self-signed-certificate-host="localhost">
+                            <credential-reference clear-text="password"/>
+                        </key-manager>
+                    </key-managers>
+                    <server-ssl-contexts>
+                        <server-ssl-context name="applicationSSC" key-manager="applicationKM"/>
+                    </server-ssl-contexts>
+                </tls>
             </subsystem>
-    <!--        <subsystem xmlns="urn:jboss:domain:iiop-openjdk:2.1">
+            <subsystem xmlns="urn:wildfly:health:1.0" security-enabled="false"/>
+            <subsystem xmlns="urn:jboss:domain:iiop-openjdk:2.1">
                 <orb socket-binding="iiop"/>
                 <initializers security="identity" transactions="spec"/>
                 <security server-requires-ssl="false" client-requires-ssl="false"/>
-            </subsystem> -->
+            </subsystem> 
             <subsystem xmlns="urn:jboss:domain:infinispan:11.0">
             {{- if .Values.wildfly_ha }}
                 <cache-container name="server" aliases="singleton cluster" default-cache="default" module="org.wildfly.clustering.server">
@@ -604,7 +635,7 @@
             {{- end }}
             <subsystem xmlns="urn:jboss:domain:jsr77:1.0"/>
             <subsystem xmlns="urn:jboss:domain:mail:4.0">
-            {{- include "wildfly-config.mail" . | indent 12 }}
+                {{- include "wildfly-config.mail" . | indent 16 }}
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:messaging-activemq:12.0">
                 <server name="default">
@@ -627,18 +658,24 @@
                     <in-vm-acceptor name="in-vm" server-id="0">
                         <param name="buffer-pooling" value="false"/>
                     </in-vm-acceptor>
-                    <!-- No integrated AMQ resources
                     <jms-queue name="ExpiryQueue" entries="java:/jms/queue/ExpiryQueue"/>
                     <jms-queue name="DLQ" entries="java:/jms/queue/DLQ"/>
+                    <jms-queue name="chatRegistrationQueue" entries="java:jboss/jms/queue/chatRegistrationQueue"/>
+                    <jms-queue name="checkChatStatusRegistrationQueue" entries="java:jboss/jms/queue/checkChatStatusRegistrationQueue"/>
+                    <!-- Добавлен, так как был в рабочем standalone, но мешает работе по причине двойного импорта -->
+                    <!-- <jms-queue name="kafkaExportQueue" entries="java:jboss/jms/queue/kafkaExportQueue"/> -->
                     <connection-factory name="InVmConnectionFactory" entries="java:/ConnectionFactory" connectors="in-vm"/>
                     <connection-factory name="RemoteConnectionFactory" entries="java:jboss/exported/jms/RemoteConnectionFactory" connectors="http-connector"/>
+                    <!-- Добавлен, так как был в рабочем standalone, но мешает работе по причине двойного импорта -->
+                    <!-- <connection-factory name="kafkaExportConnectionFactory" entries="java:jboss/kafkaExportConnectionFactory" connectors="in-vm"/> -->
                     <pooled-connection-factory name="activemq-ra" entries="java:/JmsXA java:jboss/DefaultJMSConnectionFactory" connectors="in-vm" transaction="xa"/>
-                    -->
                 </server>
             </subsystem>
-            <subsystem xmlns="urn:wildfly:microprofile-config-smallrye:1.0"/>
+            <!-- <subsystem xmlns="urn:wildfly:health:1.0" security-enabled="false"/> -->
+
             <subsystem xmlns="urn:wildfly:metrics:1.0" security-enabled="false" exposed-subsystems="*" prefix="${wildfly.metrics.prefix:wildfly}"/>
-            <subsystem xmlns="urn:wildfly:health:1.0" security-enabled="false"/>
+            <subsystem xmlns="urn:wildfly:microprofile-config-smallrye:1.0"/>
+            <subsystem xmlns="urn:wildfly:microprofile-jwt-smallrye:1.0"/>
             {{- if or .Values.wildfly_microprofile_health_smallrye }}
             <subsystem xmlns="urn:wildfly:microprofile-health-smallrye:2.0" security-enabled="false"/>
             {{- end }}
@@ -669,7 +706,7 @@
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:pojo:1.0"/>
             <subsystem xmlns="urn:jboss:domain:remoting:4.0">
-                <http-connector name="http-remoting-connector" connector-ref="default"/>
+                <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
                 {{- include "wildfly-config.outbound-connections" . | indent 16 }}
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:request-controller:1.0"/>
@@ -710,7 +747,6 @@
                             <auth-module code="Dummy"/>
                         </authentication-jaspi>
                     </security-domain>
-                    <!-- {% include "security-domain-app.xml.j2" ignore missing %} -->
                 </security-domains>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:security-manager:1.0">
@@ -736,7 +772,7 @@
                     </process-id>
                 </core-environment>
                 <recovery-environment socket-binding="txn-recovery-environment" status-socket-binding="txn-status-manager"/>
-                <coordinator-environment statistics-enabled="true" default-timeout="{{ .Values.wildfly_tm_default_timeout | default 1200 }}"/>
+                <coordinator-environment statistics-enabled="${wildfly.transactions.statistics-enabled:${wildfly.statistics-enabled:false}}" default-timeout="{{ .Values.wildfly_tm_default_timeout | default 1200 }}"/>
                 <object-store path="tx-object-store" relative-to="jboss.server.data.dir"/>
             </subsystem>
             <subsystem xmlns="urn:jboss:domain:undertow:11.0" statistics-enabled="{{ .Values.wildfly_undertow_statistics_enabled | default true }}" default-server="default-server" default-virtual-host="default-host" default-servlet-container="default" default-security-domain="other">
@@ -747,9 +783,8 @@
                         <https-listener name="https" socket-binding="https" max-header-size="{{ .Values.wildfly_https_max_header_size | default 1048576 }}" max-post-size="{{ .Values.wildfly_https_max_post_size  | default 104857600 }}" security-realm="ApplicationRealm" enable-http2="true" {{ if .Values.wildfly_set_encoding }} url-charset="{{ .Values.wildfly_set_encoding }}"{{ end }}{{ if .Values.wildfly_read_timeout }} read-timeout="{{ .Values.wildfly_read_timeout }}"{{ end }}{{ if .Values.wildfly_write_timeout }} write-timeout="{{ .Values.wildfly_write_timeout }}"{{ end }}/>
                     <host name="default-host" alias="localhost">
                         <location name="/" handler="welcome-content"/>
-                        <filter-ref name="server-header"/>
-                        <filter-ref name="x-powered-by-header"/>
-                        <http-invoker />
+                        <location name="/static" handler="lanit-static"/>
+                        <http-invoker security-realm="ApplicationRealm"/>
                     </host>
                 </server>
                 <servlet-container name="default" {{ if .Values.wildfly_stacktrace_on_error }} stack-trace-on-error="{{ .Values.wildfly_stacktrace_on_error }}" {{ end }} default-session-timeout="{{ .Values.wildfly_session_timeout | default 31 }}"{{ if .Values.wildfly_set_encoding }} default-encoding="{{ .Values.wildfly_set_encoding }}"{{ end }}>
@@ -758,14 +793,11 @@
                 </servlet-container>
                 <handlers>
                     <file name="welcome-content" path="${jboss.home.dir}/welcome-content"/>
+                    <file name="lanit-static" path="${jboss.home.dir}/lanit-static"/>
                 </handlers>
-                <filters>
-                    <response-header name="server-header" header-name="Server" header-value="WildFly/11"/>
-                    <response-header name="x-powered-by-header" header-name="X-Powered-By" header-value="Undertow/1"/>
-                </filters>
             </subsystem>
-            <subsystem xmlns="urn:jboss:domain:webservices:2.0">
-                <wsdl-host>${jboss.bind.address:0.0.0.0}</wsdl-host>
+            <subsystem xmlns="urn:jboss:domain:webservices:2.0" statistics-enabled="${wildfly.webservices.statistics-enabled:${wildfly.statistics-enabled:false}}">
+                <wsdl-host>${jboss.bind.address:127.0.0.1}</wsdl-host>
                 <endpoint-config name="Standard-Endpoint-Config"/>
                 <endpoint-config name="Recording-Endpoint-Config">
                     <pre-handler-chain name="recording-handlers" protocol-bindings="##SOAP11_HTTP ##SOAP11_HTTP_MTOM ##SOAP12_HTTP ##SOAP12_HTTP_MTOM">
@@ -798,20 +830,25 @@
             {{- if .Values.wildfly_atomic_transactions }}
             <subsystem xmlns="urn:jboss:domain:xts:2.0">
                 <host name="default-host"/>
-                <xts-environment url="http://${jboss.bind.address:0.0.0.0}:8080/ws-c11/ActivationService"/>
+                <xts-environment url="http://${jboss.bind.address:127.0.0.1}:8080/ws-c11/ActivationService"/>
                 <default-context-propagation enabled="true"/>
             </subsystem>
             {{- end }}
         </profile>
         <interfaces>
             <interface name="management">
-                <inet-address value="${jboss.bind.address.management:0.0.0.0}"/>
+                <inet-address value="${jboss.bind.address.management:127.0.0.1}"/>
             </interface>
             <interface name="public">
-                <inet-address value="${jboss.bind.address:0.0.0.0}"/>
+                <inet-address value="${jboss.bind.address:127.0.0.1}"/>
+            </interface>
+            <interface name="unsecure">
+                <inet-address value="${jboss.bind.address.unsecure:127.0.0.1}"/>
             </interface>
         </interfaces>
         <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+            <socket-binding name="iiop" interface="unsecure" port="3528"/>
+            <socket-binding name="iiop-ssl" interface="unsecure" port="3529"/>
             <socket-binding name="management-http" interface="management" port="${jboss.management.http.port:9990}"/>
             <socket-binding name="management-https" interface="management" port="${jboss.management.https.port:9993}"/>
             <socket-binding name="ajp" port="${jboss.ajp.port:8009}"/>
@@ -826,8 +863,6 @@
             <socket-binding name="modcluster" multicast-address="${jboss.modcluster.multicast.address:224.0.1.{{ .Values.wildfly_cluster_id | default 1 }}}" multicast-port="23364"/>
             <socket-binding name="messaging-group" multicast-address="${jboss.messaging.group.address:231.7.7.{{ .Values.wildfly_cluster_id | default 1}}}" multicast-port="${jboss.messaging.group.port:9876}"/>
             {{- end }}
-    <!--        <socket-binding name="iiop" interface="unsecure" port="3528"/>
-            <socket-binding name="iiop-ssl" interface="unsecure" port="3529"/> -->
             {{- include "wildfly-config.outbound-socket-bindings" . | indent 12 }}
         </socket-binding-group>
     </server>

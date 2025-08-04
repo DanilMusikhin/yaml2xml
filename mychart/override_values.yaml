@@ -1,0 +1,199 @@
+wildfly_simple_naming:
+  - { name: "java:global/cryptoClientConsulPath", value: "fz44/common/cryptoClient" }
+  - { name: "java:global/cryptoHashClientConsulPath", value: "fz44/common/cryptoHashClient" }
+  - { name: "java:global/eventOutboxKafkaUrl", value: "${env.EVENT_OUTBOX_KAFKA_BOOTSTRAP_SERVERS}" }
+
+wildfly_amq_connection_factories:
+  - { jndi: "java:jboss/eisQueueConnectionFactory", pool: { max: 10}, name: "java:jboss/eisQueueConnectionFactory" }
+  - { jndi: "java:jboss/kafkaExportConnectionFactory", pool: { max: 10 }, name: "java:jboss/kafkaExportConnectionFactory" }
+  - { jndi: "java:jboss/chatRegQueueConnectionFactory", pool: { max: 10 }, name: "java:jboss/chatRegQueueConnectionFactory" }
+
+wildfly_security_realms:
+  - { name: "ejb-security-realm", password: "test" }
+
+wildfly_lookup_naming:
+  - { name: "java:global/jdbc/pgzDB", lookup: "java:/44fz/Pgz" }
+  - { name: "java:global/jdbc/Schedule_ex", lookup: "java:/jdbc/Schedule_ex" }
+  - { name: "java:global/jdbc/ppaDSrwPostgres", lookup: "java:/jdbc/ppaDSrwPostgres" }
+  - { name: "java:global/jdbc/ppaDSroPostgres", lookup: "java:/jdbc/ppaDSroPostgres" }
+  - { name: "java:global/ejb/MenuFacade", lookup: "ejb:fz44-ppa-ear/fz44-ppa-facade-ejb/MenuFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.MenuFacade"}
+  - { name: "java:global/ejb/PpaEjbConfiguration", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-service-ejb/PpaEjbConfigurationBean!ru.lanit.fz44.ejb.service.ppa.api.PpaEjbConfiguration"}
+  - { name: "java:global/ejb/UserServiceRemote", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-service-ejb/UserServiceRemoteBean!ru.lanit.fz44.ejb.service.ppa.api.UserServiceRemote" }
+  - { name: "java:global/ejb/UserFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/UserRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.UserRwFacade" }
+  - { name: "java:global/ejb/SystemConfigFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/SystemConfigRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.SystemConfigRwFacade" }
+  - { name: "java:global/ejb/PrivilegeFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/PrivilegeRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.PrivilegeFacade" }
+  - { name: "java:global/ejb/AgreementRequirementsFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/AgreementRequirementsRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.AgreementRequirementsFacade" }
+  - { name: "java:global/ejb/BudgetFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/BudgetRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.BudgetFacade" }
+  - { name: "java:global/ejb/ApproveCycleAccessFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/ApproveCycleAccessRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.ApproveCycleAccessFacade" }
+  - { name: "java:global/ejb/MailMessageFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/MailMessageRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.MailMessageRwFacade" }
+  - { name: "java:global/ejb/CryptoPluginStatisticsFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/CryptoPluginStatisticsRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.CryptoPluginStatisticsRwFacade" }
+  - { name: "java:global/ejb/RegistrationRequestFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/RegistrationRequestRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.RegistrationRequestFacade" }
+  - { name: "java:global/ejb/EtpFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/EtpRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.EtpFacade" }
+  - { name: "java:global/ejb/VsrzFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/VsrzRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.VsrzFacade" }
+  - { name: "java:global/ejb/AccountFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/AccountRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.AccountFacade" }
+  - { name: "java:global/ejb/WorkDaysFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/WorkDaysRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.WorkDaysFacade" }
+  - { name: "java:global/ejb/SiteAlertFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/SiteAlertRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.SiteAlertRwFacade" }
+  - { name: "java:global/ejb/OrganizationFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/OrganizationRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.rw.OrganizationRwFacade" }
+  - { name: "java:global/ejb/OrganizationLinkFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/OrganizationLinkRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.OrganizationLinkFacade" }
+  - { name: "java:global/ejb/EgrulRemote", lookup: "ejb:egrul/ejbEgrul/EgrulBean!ru.lanit.egrul.api.EgrulRemote" }
+  - { name: "java:global/ejb/EgripRemote", lookup: "ejb:egrip/ejbEgrip/EgripBean!ru.lanit.egrip.api.EgripRemote" }
+  - { name: "java:global/ejb/InfoSystemFacade", lookup: "ejb:fz44-ris-facade-ear/fz44-ris-facade-ejb/InfoSystemFacadeBean!ru.lanit.fz44.ejb.facade.ris.api.InfoSystemFacade" }
+  - { name: "java:global/ejb/ReportRegistryFacade", lookup: "ejb:fz44-rep-facade-ear/fz44-rep-facade-ejb/ReportRegistryFacadeBean!ru.lanit.fz44.ejb.facade.rep.api.ReportRegistryFacade" }
+  - { name: "java:global/ejb/AgencyClause223Service", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/AgencyClause223ServiceBean!ru.lanit.fz44.ejb.service.nsi.api.AgencyClause223Service" }
+  - { name: "java:global/ejb/OperatorEisService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OperatorEisServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OperatorEisService" }
+  - { name: "java:global/ejb/OperatorKtruService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OperatorKtruServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OperatorKtruService" }
+  - { name: "java:global/ejb/RegionalOperatorService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionalOperatorServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionalOperatorService" }
+  - { name: "java:global/ejb/RegionalOperatorTkoService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionalOperatorTkoServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionalOperatorTkoService" }
+  - { name: "java:global/ejb/JuristicKindServiceBean", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/JuristicKindServiceBean!ru.lanit.fz44.ejb.service.nsi.api.JuristicKindService" }
+  - { name: "java:global/ejb/PpoService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/PpoServiceBean!ru.lanit.fz44.ejb.service.nsi.api.PpoService" }
+  - { name: "java:global/ejb/OkatoService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkatoService!ru.lanit.fz44.ejb.service.nsi.api.OkatoService" }
+  - { name: "java:global/ejb/OkopfService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkopfServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkopfService" }
+  - { name: "java:global/ejb/OkfsService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkfsService!ru.lanit.fz44.ejb.service.nsi.api.OkfsService" }
+  - { name: "java:global/ejb/OkopfOldService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkopfOldServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkopfOldService" }
+  - { name: "java:global/ejb/OkatoOktmoLinkService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/OkatoOktmoLinkServiceBean!ru.lanit.fz44.ejb.service.nsi.api.OkatoOktmoLinkService" }
+  - { name: "java:global/ejb/NsiReceiptCodesFacade", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/NsiReceiptCodesFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.NsiReceiptCodesFacade" }
+  - { name: "java:global/ejb/KladrService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/KladrServiceBean!ru.lanit.fz44.ejb.service.nsi.api.KladrService" }
+  - { name: "java:global/ejb/RegionService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionServiceBean!ru.lanit.fz44.ejb.service.nsi.api.RegionService" }
+  - { name: "java:global/ejb/RegionFacade", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/RegionFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.RegionFacade" }
+  - { name: "java:global/ejb/BudgetService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/BudgetServiceBean!ru.lanit.fz44.ejb.service.nsi.api.BudgetService" }
+  - { name: "java:global/ejb/TofkService", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/TofkServiceBean!ru.lanit.fz44.ejb.service.nsi.api.TofkService" }
+  - { name: "java:global/ejb/RemoteFileUpdater", lookup: "ejb:eis-filestore-ear/eis-filestore-ejb/FileUpdaterBean!ru.lanit.fz44.filestore.ejb.api.FileUpdater" }
+  - { name: "java:global/ejb/ControlSubjectsFacade", lookup: "ejb:fz44-psk-facade-ear/fz44-psk-facade-ejb/ControlSubjectsFacadeBean!ru.lanit.fz44.ejb.facade.psk.api.ControlSubjectsFacade" }
+  - { name: "java:global/ejb/CalendarEventTypeFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarEventTypeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarEventTypeFacade" }
+  - { name: "java:global/ejb/CalendarNotifyTypeFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotifyTypeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotifyTypeFacade" }
+  - { name: "java:global/ejb/CalendarEventPrivilegeFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarEventPrivilegeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarEventPrivilegeFacade" }
+  - { name: "java:global/ejb/CalendarNotifyPrivilegeFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotifyPrivilegeFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotifyPrivilegeFacade" }
+  - { name: "java:global/ejb/AgreementFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/AgreementFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.AgreementFacade" }
+  - { name: "java:global/ejb/DocumentFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/DocumentFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.DocumentFacade" }
+  - { name: "java:global/ejb/MembersFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/MembersFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.MembersFacade" }
+  - { name: "java:global/ejb/ResultLogFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/ResultLogFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.ResultLogFacade" }
+  - { name: "java:global/ejb/RouteFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/RouteFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.RouteFacade" }
+  - { name: "java:global/ejb/RouteStageFacade", lookup: "ejb:fz44-routes-ear/fz44-routes-facade-ejb/RouteStageFacadeBean!ru.lanit.fz44.ejb.facade.routes.api.RouteStageFacade" }
+  - { name: "java:global/ejb/BankGuaranteeFacade", lookup: "ejb:fz44-bank-guarantee-facade-ear/fz44-bank-guarantee-facade-ejb/BankGuaranteeFacadeBean!ru.lanit.fz44.ejb.facade.bankguarantee.api.BankGuaranteeFacade" }
+  - { name: "java:global/ejb/PropertyServiceBean", lookup: "ejb:user-control-config-ejb-ear/user-control-config-ejb/PropertyServiceBean!ru.lanit.auth.user.control.config.api.PropertyService" }
+  - { name: "java:global/ejb/UserControlServiceBean", lookup: "ejb:user-control-service-ejb-ear/user-control-service-ejb/UserControlServiceBean!ru.lanit.auth.user.control.service.UserControlService" }
+  - { name: "java:global/ejb/BiklessBankFacade", lookup: "ejb:fz44-ppa-rw-ear/fz44-ppa-facade-rw-ejb/BiklessBankRwFacadeBean!ru.lanit.fz44.ejb.facade.ppa.api.BiklessBankFacade" }
+  - { name: "java:global/ejb/InfoProvider", lookup: "ejb:eis-filestore-ear/eis-filestore-ejb/FileStoreManager!ru.lanit.fz44.filestore.ejb.api.InfoProvider" }
+  - { name: "java:global/ejb/EjbCallCacheInvalidator", lookup: "ejb:fz44-ppa-rw-ear/fz44-ejb-cache-ejb/EjbCallCacheBean!ru.lanit.fz44.cache.ejb.api.EjbCallCacheInvalidator"}
+  - { name: "java:global/ejb/CalendarNotificationFacade", lookup: "ejb:fz44-calendar-facade-ear/fz44-calendar-facade-ejb/CalendarNotificationFacadeBean!ru.lanit.fz44.ejb.facade.calendar.api.CalendarNotificationFacade" }
+  - { name: "java:global/ejb/DocStoreOKFacadeBean", lookup: "ejb:docstore-ear/docstore-facade-ws/DocStoreFacadeBean!ru.lanit.docstore.facade.ejb.api.DocStoreFacade" }
+  - { name: "java:global/ejb/NsiPurchaseTypeForPpaFacade", lookup: "ejb:fz44-oss-stub-ear/fz44-oss-stub-ejb/NsiPurchaseTypeForPpaFacadeBean!ru.lanit.fz44.ejb.facade.nsi.api.NsiPurchaseTypeForPpaFacade" }
+  - { name: "java:global/ejb/DocStoreFCSFacadeBean", lookup: "ejb:docstore-ear/docstore-facade-ws/DocStoreFacadeBean!ru.lanit.docstore.facade.ejb.api.DocStoreFacade" }
+  - { name: "java:global/ejb/NsiOkpd2Service", lookup: "ejb:fz44-nsi-service-ear/fz44-nsi-service-ejb/NsiOkpd2ServiceBean!ru.lanit.fz44.ejb.service.nsi.api.NsiOkpd2Service" }
+
+wildfly_socket_bindings:
+  - { name: "remote-ejb-egrul", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-egrip", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-ris", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-rep", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-nsi", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-psk", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-calendar", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-routes", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-rbg", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-uc", destinations: [{ host: "localhost", port: "30011" }] }
+  - { name: "remote-ejb-fstore", destinations: [{ host: "eis-k8s-node01.eis3.fk.dks.lanit.ru", port: "30378" }] }
+  - { name: "remote-ejb-dstore-ok", destinations: [{ host: "eis-k8s-node01.eis3.fk.dks.lanit.ru", port: "30371" }] }
+  - { name: "remote-ejb-dstore-fcs", destinations: [ { host: "eis-k8s-node01.eis3.fk.dks.lanit.ru", port: "30365" } ] }
+
+wildfly_naming:
+  - jndi: "java:global/configuration/fz44/common/additionalAuthConstraint"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "spz.set", value: "99111111100" }
+      - { name: "grbs.set", value: "" }
+      - { name: "region.set", value: "" }
+      - { name: "ip.addr.set", value: "" }
+      - { name: "reload.period", value: "5" }
+      - { name: "gis.nr.url", value: "" }
+
+  - jndi: "java:global/configuration/fz44/ppa/ppaConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "ldap.host", value: "oldap01.eis3.fk.dks.lanit.ru" }
+      - { name: "ldap.port", value: "389" }
+      - { name: "ldap.user", value: "cn=Manager,dc=zakupki,dc=gov,dc=ru" }
+      - { name: "ldap.pass", value: "123qweASD" }
+      - { name: "ldap.base", value: "ou=pgz,dc=zakupki,dc=gov,dc=ru" }
+      - { name: "site.alerts.enable", value: "true" }
+      - { name: "user.access.refusal.enabled", value: "true" }
+      - { name: "urd.doc.issue.start.date", value: "01.01.2024" }
+
+  - jndi: "java:global/configuration/fz44/common/authenticationConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "enabled", value: "false" }
+      - { name: "application.host.url", value: "http://" }
+      - { name: "authentication.redirect.url", value: "http://" }
+      - { name: "authentication.esia.redirect.url", value: "http://" }
+      - { name: "public.host.url", value: "http://" }
+      - { name: "authentication.chooser.redirect.url", value: "http://" }
+      - { name: "authentication.error.redirect.url", value: "http://" }
+      - { name: "authentication.logout.redirect.url", value: "http://" }
+      - { name: "authentication.esia.error.redirect.url", value: "http://" }
+      - { name: "authentication.esia.logout.redirect.url", value: "http://" }
+      - { name: "hazelcast.address", value: "192.168.1.201:5701" }
+      - { name: "hazelcast.map.name", value: "fz44_auth" }
+      - { name: "enable.united.record", value: "false" }
+      - { name: "session.cookie.name", value: "sso_session_key" }
+      - { name: "callback.cookie.name", value: "authCallback" }
+      - { name: "session.key.certificate.name.prefix", value: "_certificate" }
+      - { name: "esia.cookie.name", value: "esiaUser" }
+      - { name: "authentication.error.cookie.name", value: "authenticationError" }
+      - { name: "user.login.parameter.name", value: "sso_user" }
+      - { name: "certificate.thumbprint.parameter.name", value: "sso_certificate_thumbprint" }
+      - { name: "exclude.urls.parameter.name", value: "ru.lanit.fz44.sso.EXCLUDE_URL" }
+
+  - jndi: "java:global/configuration/fz44/common/publicationConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+
+  - jndi: "java:global/configuration/fz44/common/commonConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "pgz.private.host.with.context", value: "http://localhost:8080/pgz" }
+      - { name: "notifications.and.event.common.settings.context", value: "http://localhost:8080/44fz/calendar" }
+      - { name: "sbo.private.host.with.context", value: "http://localhost:8080/44fz/sbo" }
+      - { name: "pbo.private.host.with.context", value: "http://localhost:8080/44fz/pbo" }
+      - { name: "mo.private.host.with.context", value: "http://localhost:8080/44fz/mo" }
+      - { name: "end.access.restriction.2purchase.date", value: "01.01.2050" }
+      - { name: "buffer.info.access.schema", value: "1" }
+      - { name: "orgs.with.access.hidden.enforcer.info", value: "01604000061,01604000061,01604000061" }
+      - { name: "orgs.with.access.hidden.sanction.info", value: "01604000061,01604000061" }
+      - { name: "urd.base.url", value: "http://localhost:9080" }
+      - { name: "urd.transitional.period_end_date", value: "01.04.2025" }
+
+  - jndi: "java:global/configuration/fz44/common/securityConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "password.encoding.method", value: "GOST" }
+  
+  - jndi: "java:global/configuration/fz44/common/asyncJobConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+
+  - jndi: "java:global/configuration/fz44/common/importRouteInfoConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+
+  - jndi: "java:global/configuration/fz44/common/fileStoreHashConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+
+  - jndi: "java:global/configuration/fz44/common/cryptoClient"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "cryptoJsonRpcServiceUrl", value: "http://192.168.231.18:8080/crypto/" }
+
+  - jndi: "java:global/configuration/fz44/common/cryptoHashClient"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "cryptoHashJsonRpcServiceUrl", value: "http://192.168.231.18:8080/crypto-hash/" }
+
+  - jndi: "java:global/configuration/fz44/common/userControlConfig"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "mode", value: "off" }
+      - { name: "reverseModeTimeout", value: "3000" }
+      - { name: "execTimeout", value: "10000" }
+
+  - jndi: "java:global/configuration/fz44/auth/autoauth"
+    wildfly_naming_class: "ru.lanit.fz44.config.bindings.ConfigObjectFactory"
+    properties:
+      - { name: "callback.url", value: "http://localhost:8080/auth/auto/callback" }
